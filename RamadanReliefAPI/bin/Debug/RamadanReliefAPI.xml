@@ -1,0 +1,39 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>RamadanReliefAPI</name>
+    </assembly>
+    <members>
+        <member name="M:RamadanReliefAPI.Actors.TopLevelActor.Stop">
+            <summary>
+            This method stops the actor system
+            </summary>
+        </member>
+        <member name="M:RamadanReliefAPI.Controllers.AdminController.CreateAdminAccount(RamadanReliefAPI.Models.Dtos.Admin.CreateAdminRequest)">
+            <summary>
+            Create admin
+            </summary>
+            <param name="createAdminRequest"></param>
+            <returns></returns>
+        </member>
+        <member name="M:RamadanReliefAPI.Controllers.AdminController.LoginInAdmin(RamadanReliefAPI.Models.Dtos.Admin.LoginAdminRequest)">
+            <summary>
+            Login admin
+            </summary>
+            <param name="createAdminRequest"></param>
+            <returns></returns>
+        </member>
+        <member name="T:RamadanReliefAPI.Migrations.Initial">
+            <inheritdoc />
+        </member>
+        <member name="M:RamadanReliefAPI.Migrations.Initial.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:RamadanReliefAPI.Migrations.Initial.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:RamadanReliefAPI.Migrations.Initial.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+    </members>
+</doc>
