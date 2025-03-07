@@ -34,7 +34,7 @@ public class JwtTokenGenerator
                 new SymmetricSecurityKey(key),
                 SecurityAlgorithms.HmacSha256Signature
             ),
-            Issuer = "CONSTRUCTION PROJECT"
+            Issuer = "RAMADAN PROJECT"
         };
 
         var token = tokenHandler.CreateToken(tokenDescriptor);

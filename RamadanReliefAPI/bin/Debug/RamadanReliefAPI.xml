@@ -23,6 +23,13 @@
             <param name="createAdminRequest"></param>
             <returns></returns>
         </member>
+        <member name="M:RamadanReliefAPI.Controllers.NewsLetterController.CreateProduct(RamadanReliefAPI.Controllers.SendNewsLettersRequest)">
+            <summary>
+            create sms newsletter
+            </summary>
+            <param name="sendNewsLettersRequest"></param>
+            <returns></returns>
+        </member>
         <member name="T:RamadanReliefAPI.Migrations.Initial">
             <inheritdoc />
         </member>

@@ -19,4 +19,6 @@ public class ApplicationDbContext : DbContext
     public DbSet<Event> Events { get; set; }
     public DbSet<EventRegistration> EventRegistrations { get; set; }
     public DbSet<DonationStatistics> DonationStatistics { get; set; }
+    public DbSet<NewsLetter> NewsLetters { get; set; }
+
 }

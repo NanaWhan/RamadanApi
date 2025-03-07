@@ -38,8 +38,8 @@ public class MainActor : BaseActor
                 schedule_date = "",
                 is_schedule = "false",
                 message =
-                    "Welcome to JUSTBEN CONCRETE LIMITED updates! Receive industry news, product advancements, and exclusive offers on high-quality concrete solutions. ",
-                sender = "JUSTBEN",
+                    "Welcome to Ramadan Relief. We are glad to have you on board. We will be sending you updates on our activities. Stay tuned.",
+                sender = "Ramadan",
                 recipient = new List<string>() { newsLetterMessage.PhoneNumber }
             };
             HttpContent body = new StringContent(
@@ -48,7 +48,7 @@ public class MainActor : BaseActor
                 "application/json"
             );
 
-            var smsKey = "oGoxAsvZxf6wweeDHKNryTPHX";
+            var smsKey = "2nwkmCOVenT5pV0BZMFFiDnsn";
             var mnotifyResponse = await httpClient.PostAsync(
                 $"https://api.mnotify.com/api/sms/quick?key=" + smsKey,
                 body
