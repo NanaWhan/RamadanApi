@@ -9,7 +9,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="ed697c49-5884-4b72-80d0-df5326a0f8b1" name="Changes" comment="" />
+    <list default="true" id="ed697c49-5884-4b72-80d0-df5326a0f8b1" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/RamadanReliefAPI/obj/Debug/net8.0/RamadanReliefAPI.AssemblyInfo.cs" beforeDir="false" afterPath="$PROJECT_DIR$/RamadanReliefAPI/obj/Debug/net8.0/RamadanReliefAPI.AssemblyInfo.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RamadanReliefAPI/obj/Debug/net8.0/RamadanReliefAPI.AssemblyInfoInputs.cache" beforeDir="false" afterPath="$PROJECT_DIR$/RamadanReliefAPI/obj/Debug/net8.0/RamadanReliefAPI.AssemblyInfoInputs.cache" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -17,6 +20,9 @@
   </component>
   <component name="DpaMonitoringSettings">
     <option name="firstShow" value="false" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="ProjectColorInfo"><![CDATA[{
   "associatedIndex": 0
@@ -31,6 +37,7 @@
   "keyToString": {
     ".NET Launch Settings Profile.RamadanReliefAPI: IIS Express.executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
+    "git-widget-placeholder": "main",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
@@ -94,7 +101,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1741334363481</updated>
-      <workItem from="1741334364747" duration="8496000" />
+      <workItem from="1741334364747" duration="8859000" />
     </task>
     <servers />
   </component>
