@@ -1,6 +1,0 @@
-@RamadanReliefAPI_HostAddress = http://localhost:5101
-
-GET {{RamadanReliefAPI_HostAddress}}/weatherforecast/
-Accept: application/json
-
-###
