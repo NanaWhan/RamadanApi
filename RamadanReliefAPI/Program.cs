@@ -6,6 +6,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using RamadanReliefAPI.Data;
+using RamadanReliefAPI.Services.Interfaces;
+using RamadanReliefAPI.Services.Providers;
 using Supabase;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -124,6 +126,9 @@ builder
 builder.Services.AddHttpClient();
 var actorSystem = ActorSystem.Create("ramadan-actor-system");
 builder.Services.AddSingleton(actorSystem);
+
+builder.Services.AddScoped<IPayStackPaymentService, PayStackPaymentService>();
+
 
 var app = builder.Build();
 

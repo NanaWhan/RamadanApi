@@ -23,6 +23,25 @@
             <param name="createAdminRequest"></param>
             <returns></returns>
         </member>
+        <member name="M:RamadanReliefAPI.Controllers.DonationsController.CreateDonation(RamadanReliefAPI.Models.Dtos.Donation.DonationRequest)">
+            <summary>
+            Create a donation and generate a payment link
+            </summary>
+            <param name="donationRequest">Donation request</param>
+            <returns>Payment link</returns>
+        </member>
+        <member name="M:RamadanReliefAPI.Controllers.DonationsController.PayStackWebhook">
+            <summary>
+            Webhook for PayStack to update payment status
+            </summary>
+            <returns></returns>
+        </member>
+        <member name="M:RamadanReliefAPI.Controllers.DonationsController.GetStatistics">
+            <summary>
+            Get donation statistics
+            </summary>
+            <returns>Donation statistics</returns>
+        </member>
         <member name="M:RamadanReliefAPI.Controllers.NewsLetterController.CreateNewsLetter(RamadanReliefAPI.Controllers.SendNewsLettersRequest)">
             <summary>
             create sms newsletter
@@ -52,6 +71,18 @@
             <inheritdoc />
         </member>
         <member name="M:RamadanReliefAPI.Migrations.Newsletters.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:RamadanReliefAPI.Migrations.paystack">
+            <inheritdoc />
+        </member>
+        <member name="M:RamadanReliefAPI.Migrations.paystack.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:RamadanReliefAPI.Migrations.paystack.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:RamadanReliefAPI.Migrations.paystack.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
             <inheritdoc />
         </member>
     </members>

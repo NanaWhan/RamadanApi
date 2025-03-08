@@ -1429,6 +1429,18 @@
           }
         }
       },
+      "Paystack.Net/1.1.0": {
+        "type": "package",
+        "dependencies": {
+          "Newtonsoft.Json": "13.0.1"
+        },
+        "compile": {
+          "lib/netstandard2.0/PayStack.Net.dll": {}
+        },
+        "runtime": {
+          "lib/netstandard2.0/PayStack.Net.dll": {}
+        }
+      },
       "Reactive.Streams/1.0.2": {
         "type": "package",
         "dependencies": {
@@ -5411,6 +5423,20 @@
         "npgsql.entityframeworkcore.postgresql.7.0.0.nupkg.sha512",
         "npgsql.entityframeworkcore.postgresql.nuspec",
         "postgresql.png"
+      ]
+    },
+    "Paystack.Net/1.1.0": {
+      "sha512": "13UXyxPUjtxcEquPYT8ltqn3BqRZdvdQUmmeN92YrcUo5jj0NVzYhZKgW8RxVkhB1zoiUgaZMpt7xZz//1720Q==",
+      "type": "package",
+      "path": "paystack.net/1.1.0",
+      "files": [
+        ".nupkg.metadata",
+        ".signature.p7s",
+        "README.md",
+        "lib/netstandard2.0/PayStack.Net.dll",
+        "paystack-logo.png",
+        "paystack.net.1.1.0.nupkg.sha512",
+        "paystack.net.nuspec"
       ]
     },
     "Reactive.Streams/1.0.2": {
@@ -9756,6 +9782,7 @@
       "Microsoft.AspNetCore.OpenApi >= 8.0.0",
       "Microsoft.EntityFrameworkCore.Tools >= 7.0.0",
       "Npgsql.EntityFrameworkCore.PostgreSQL >= 7.0.0",
+      "PayStack.Net >= 1.1.0",
       "Supabase >= 1.0.2",
       "Swashbuckle.AspNetCore >= 6.5.0"
     ]
@@ -9864,6 +9891,10 @@
           "Npgsql.EntityFrameworkCore.PostgreSQL": {
             "target": "Package",
             "version": "[7.0.0, )"
+          },
+          "PayStack.Net": {
+            "target": "Package",
+            "version": "[1.1.0, )"
           },
           "Supabase": {
             "target": "Package",

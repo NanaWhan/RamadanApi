@@ -6,6 +6,7 @@ namespace RamadanReliefAPI.Actors;
 public class TopLevelActor
 {
     public static IActorRef MainActor = ActorRefs.Nobody;
+    public static IActorRef DonationActor = ActorRefs.Nobody;
     public static ActorSystem ActorSystem;
 
     public static IActorRef GetActorInstance<T>(string name)

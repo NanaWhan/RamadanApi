@@ -106,6 +106,10 @@
               "target": "Package",
               "version": "[7.0.0, )"
             },
+            "PayStack.Net": {
+              "target": "Package",
+              "version": "[1.1.0, )"
+            },
             "Supabase": {
               "target": "Package",
               "version": "[1.0.2, )"
