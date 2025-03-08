@@ -189,6 +189,29 @@ namespace RamadanReliefAPI.Migrations
                     b.ToTable("EventRegistrations");
                 });
 
+            modelBuilder.Entity("RamadanReliefAPI.Models.DomainModels.NewsLetter", b =>
+                {
+                    b.Property<string>("Id")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<string>("FullName")
+                        .HasColumnType("text");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("NewsLetters");
+                });
+
             modelBuilder.Entity("RamadanReliefAPI.Models.DomainModels.User", b =>
                 {
                     b.Property<Guid>("Id")

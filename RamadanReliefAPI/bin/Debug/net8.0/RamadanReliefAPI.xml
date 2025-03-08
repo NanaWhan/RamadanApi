@@ -23,7 +23,7 @@
             <param name="createAdminRequest"></param>
             <returns></returns>
         </member>
-        <member name="M:RamadanReliefAPI.Controllers.NewsLetterController.CreateProduct(RamadanReliefAPI.Controllers.SendNewsLettersRequest)">
+        <member name="M:RamadanReliefAPI.Controllers.NewsLetterController.CreateNewsLetter(RamadanReliefAPI.Controllers.SendNewsLettersRequest)">
             <summary>
             create sms newsletter
             </summary>
@@ -40,6 +40,18 @@
             <inheritdoc />
         </member>
         <member name="M:RamadanReliefAPI.Migrations.Initial.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:RamadanReliefAPI.Migrations.Newsletters">
+            <inheritdoc />
+        </member>
+        <member name="M:RamadanReliefAPI.Migrations.Newsletters.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:RamadanReliefAPI.Migrations.Newsletters.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:RamadanReliefAPI.Migrations.Newsletters.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
             <inheritdoc />
         </member>
     </members>

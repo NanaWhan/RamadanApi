@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using System.Reactive;
+using Microsoft.EntityFrameworkCore;
 using RamadanReliefAPI.Models.DomainModels;
 
 namespace RamadanReliefAPI.Data;
@@ -20,5 +21,6 @@ public class ApplicationDbContext : DbContext
     public DbSet<EventRegistration> EventRegistrations { get; set; }
     public DbSet<DonationStatistics> DonationStatistics { get; set; }
     public DbSet<NewsLetter> NewsLetters { get; set; }
+    public DbSet<Discount> Discounts { get; set; }
 
 }
