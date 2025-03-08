@@ -109,16 +109,33 @@ public class DonationActor : BaseActor
             using var scope = _serviceProvider.CreateScope();
             var httpClient = scope.ServiceProvider.GetRequiredService<HttpClient>();
 
-            var messageText =
-                $"Thank you for your donation of {donation.Amount} {donation.Currency} to Ramadan Relief. Your generosity will help provide {CalculateMeals(donation.Amount)} meals for those in need during the holy month.";
+            // Ensure the phone number is properly formatted (remove any spaces or special characters)
+            var cleanedPhoneNumber = donation.DonorPhone.Trim().Replace(" ", "");
+            if (!cleanedPhoneNumber.StartsWith("+"))
+            {
+                // Assume Ghana number if no country code provided
+                if (cleanedPhoneNumber.StartsWith("0"))
+                {
+                    cleanedPhoneNumber = "+233" + cleanedPhoneNumber.Substring(1);
+                }
+                else
+                {
+                    cleanedPhoneNumber = "+233" + cleanedPhoneNumber;
+                }
+            }
+
+            var messageText = $"Thank you for your donation of {donation.Amount} {donation.Currency} to Ramadan Relief. Your generosity will help provide {CalculateMeals(donation.Amount)} meals for those in need during the holy month.";
             _logger.LogInformation($"DonationActor: SMS message: {messageText}");
 
             var smsKey = "2nwkmCOVenT5pV0BZMFFiDnsn";
             var sender = "RamRelief25";
-            _logger.LogInformation($"DonationActor: Sending SMS request to mNotify API");
-            var mnotifyResponse = await httpClient.GetAsync(
-                $"https://apps.mnotify.net/smsapi?key={smsKey}&to={donation.DonorPhone}&msg={Uri.EscapeDataString(messageText)}&sender_id={sender}"
-            );
+            
+            // Properly encode the message for URL transmission
+            var encodedMessage = Uri.EscapeDataString(messageText);
+            var requestUrl = $"https://apps.mnotify.net/smsapi?key={smsKey}&to={cleanedPhoneNumber}&msg={encodedMessage}&sender_id={sender}";
+            
+            _logger.LogInformation($"DonationActor: Sending SMS request to mNotify API: {requestUrl}");
+            var mnotifyResponse = await httpClient.GetAsync(requestUrl);
 
             if (mnotifyResponse.IsSuccessStatusCode)
             {
@@ -147,64 +164,82 @@ public class DonationActor : BaseActor
 
         try
         {
-            // Use a transaction to ensure data consistency
-            _logger.LogInformation("DonationActor: Beginning database transaction for statistics update");
-            using var transaction = await _db.Database.BeginTransactionAsync();
+            // Use a simpler approach with retries
+            const int maxRetries = 3;
+            int retryCount = 0;
+            bool success = false;
 
-            try
+            while (!success && retryCount < maxRetries)
             {
-                // Load statistics with update lock to prevent concurrency issues
-                _logger.LogInformation("DonationActor: Querying statistics record with FOR UPDATE lock");
-                var stats = await _db.DonationStatistics
-                    .FromSqlRaw("SELECT * FROM \"DonationStatistics\" WHERE \"Id\" = 1 FOR UPDATE")
-                    .FirstOrDefaultAsync();
-
-                if (stats == null)
+                try
                 {
-                    _logger.LogInformation("DonationActor: No statistics record found, creating new one");
-                    stats = new DonationStatistics
+                    retryCount++;
+                    _logger.LogInformation($"DonationActor: Attempting to update statistics (Attempt {retryCount}/{maxRetries})");
+                    
+                    // Start a transaction
+                    using var transaction = await _db.Database.BeginTransactionAsync();
+                    
+                    // Get the current statistics record - avoid using raw SQL
+                    var stats = await _db.DonationStatistics.FirstOrDefaultAsync(s => s.Id == 1);
+                    
+                    if (stats == null)
                     {
-                        Id = 1,
-                        TotalDonations = amount,
-                        TotalDonors = 1,
-                        MealsServed = CalculateMeals(amount),
-                        LastUpdated = DateTime.UtcNow
-                    };
-                    await _db.DonationStatistics.AddAsync(stats);
-                    _logger.LogInformation(
-                        $"DonationActor: Created new statistics record with initial amount: {amount}");
+                        _logger.LogInformation("DonationActor: No statistics record found, creating new one");
+                        stats = new DonationStatistics
+                        {
+                            Id = 1,
+                            TotalDonations = amount,
+                            TotalDonors = 1,
+                            MealsServed = CalculateMeals(amount),
+                            LastUpdated = DateTime.UtcNow
+                        };
+                        await _db.DonationStatistics.AddAsync(stats);
+                        _logger.LogInformation($"DonationActor: Created new statistics record with initial amount: {amount}");
+                    }
+                    else
+                    {
+                        _logger.LogInformation(
+                            $"DonationActor: Updating existing statistics. Current values - Total: {stats.TotalDonations}, Donors: {stats.TotalDonors}, Meals: {stats.MealsServed}");
+                        stats.TotalDonations += amount;
+                        stats.TotalDonors += 1;
+                        stats.MealsServed += CalculateMeals(amount);
+                        stats.LastUpdated = DateTime.UtcNow;
+                        _db.DonationStatistics.Update(stats);
+                        _logger.LogInformation(
+                            $"DonationActor: Updated statistics. New values - Total: {stats.TotalDonations}, Donors: {stats.TotalDonors}, Meals: {stats.MealsServed}");
+                    }
+                    
+                    // Save changes
+                    await _db.SaveChangesAsync();
+                    
+                    // Commit transaction
+                    await transaction.CommitAsync();
+                    
+                    _logger.LogInformation("DonationActor: Statistics update completed successfully");
+                    success = true;
                 }
-                else
+                catch (DbUpdateConcurrencyException ex)
                 {
-                    _logger.LogInformation(
-                        $"DonationActor: Updating existing statistics. Current values - Total: {stats.TotalDonations}, Donors: {stats.TotalDonors}, Meals: {stats.MealsServed}");
-                    stats.TotalDonations += amount;
-                    stats.TotalDonors += 1;
-                    stats.MealsServed += CalculateMeals(amount);
-                    stats.LastUpdated = DateTime.UtcNow;
-                    _logger.LogInformation(
-                        $"DonationActor: Updated statistics. New values - Total: {stats.TotalDonations}, Donors: {stats.TotalDonors}, Meals: {stats.MealsServed}");
+                    _logger.LogWarning(ex, $"DonationActor: Concurrency conflict during statistics update (Attempt {retryCount}/{maxRetries})");
+                    // Let it retry for concurrency conflicts
+                    await Task.Delay(200 * retryCount); // Exponential backoff
                 }
-
-                _logger.LogInformation("DonationActor: Saving statistics changes to database");
-                await _db.SaveChangesAsync();
-
-                _logger.LogInformation("DonationActor: Committing transaction");
-                await transaction.CommitAsync();
-
-                _logger.LogInformation("DonationActor: Statistics update completed successfully");
+                catch (Exception ex)
+                {
+                    _logger.LogError(ex, $"DonationActor: Error during statistics update (Attempt {retryCount}/{maxRetries})");
+                    throw; // Rethrow other exceptions
+                }
             }
-            catch (Exception ex)
+
+            if (!success)
             {
-                _logger.LogError(ex, "DonationActor: Error during statistics update, rolling back transaction");
-                await transaction.RollbackAsync();
-                throw new Exception("Failed to update donation statistics", ex);
+                throw new Exception($"Failed to update donation statistics after {maxRetries} attempts");
             }
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "DonationActor: Error updating donation statistics");
-            // Consider implementing a retry mechanism or event sourcing pattern for critical statistics updates
+            throw; // Rethrow to allow the calling method to handle it
         }
     }
 

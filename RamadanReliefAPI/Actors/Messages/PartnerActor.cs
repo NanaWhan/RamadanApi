@@ -83,7 +83,7 @@ public class PartnerActor : BaseActor
                 schedule_date = "",
                 is_schedule = "false",
                 message = message,
-                sender = "RR'25",
+                sender = "RamRelief25",
                 recipient = new List<string>() { partner.Phone }
             };
             

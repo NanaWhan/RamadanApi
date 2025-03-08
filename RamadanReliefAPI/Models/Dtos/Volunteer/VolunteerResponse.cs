@@ -7,8 +7,6 @@ public class VolunteerResponse
     public string Email { get; set; }
     public string Phone { get; set; }
     public string? City { get; set; }
-    public List<string> Interests { get; set; }
-    public List<string> Availability { get; set; }
     public string? Message { get; set; }
     public DateTime RegistrationDate { get; set; }
     public bool IsActive { get; set; }

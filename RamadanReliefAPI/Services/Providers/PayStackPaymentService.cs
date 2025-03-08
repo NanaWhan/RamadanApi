@@ -20,7 +20,7 @@ public class PayStackPaymentService : IPayStackPaymentService
     {
         _logger = logger;
         _configuration = configuration;
-        // PayStackApi = new PayStackApi(_configuration.GetValue<string>("PayStackKeys:live_key"));
+        // PayStackApi = new PayStackApi(_configuration.GetValue<string>("PayStackKeys:test_key"));
         PayStackApi = new PayStackApi(_configuration.GetValue<string>("PayStackKeys:live_key"));
     }
 
