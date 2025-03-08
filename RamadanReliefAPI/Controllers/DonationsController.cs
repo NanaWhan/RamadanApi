@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using RamadanReliefAPI.Data;
 using RamadanReliefAPI.Extensions;
 using RamadanReliefAPI.Models;
@@ -137,7 +138,8 @@ public class DonationsController : ControllerBase
             if (paymentInfo?.Data?.Reference != null)
             {
                 // Find the corresponding donation
-                var donation = await _db.Donations.FindAsync(paymentInfo.Data.Reference);
+                var donation = await _db.Donations.FirstOrDefaultAsync(d => 
+                    d.TransactionReference == paymentInfo.Data.Reference);
                 
                 if (donation != null)
                 {
@@ -186,6 +188,75 @@ public class DonationsController : ControllerBase
             return Ok();
         }
     }
+    
+    [HttpPost("verify-payment/{reference}")]
+[Authorize(Roles = CommonConstants.Roles.Admin)]
+public async Task<IActionResult> VerifyPayment(string reference)
+{
+    try
+    {
+        var donation = await _db.Donations.FirstOrDefaultAsync(d => d.TransactionReference == reference);
+        
+        if (donation == null)
+        {
+            _apiResponse.IsSuccess = false;
+            _apiResponse.StatusCode = HttpStatusCode.NotFound;
+            _apiResponse.Message = "Donation not found";
+            return NotFound(_apiResponse);
+        }
+        
+        // Verify the payment with PayStack directly
+        var verification = _payStackPaymentService.VerifyTransaction(reference);
+        
+        if (verification != null && verification.Status && verification.Data.Status == "success")
+        {
+            // Update donation status
+            donation.PaymentStatus = CommonConstants.TransactionStatus.Success;
+            await _db.SaveChangesAsync();
+            
+            // Update statistics
+            var stats = await _db.DonationStatistics.FindAsync(1);
+            if (stats == null)
+            {
+                stats = new DonationStatistics
+                {
+                    TotalDonations = donation.Amount,
+                    TotalDonors = 1,
+                    MealsServed = (int)(donation.Amount / 5),
+                    LastUpdated = DateTime.UtcNow
+                };
+                await _db.DonationStatistics.AddAsync(stats);
+            }
+            else
+            {
+                stats.TotalDonations += donation.Amount;
+                stats.TotalDonors += 1;
+                stats.MealsServed += (int)(donation.Amount / 5);
+                stats.LastUpdated = DateTime.UtcNow;
+            }
+            await _db.SaveChangesAsync();
+            
+            _apiResponse.IsSuccess = true;
+            _apiResponse.StatusCode = HttpStatusCode.OK;
+            _apiResponse.Message = "Payment verified successfully";
+            return Ok(_apiResponse);
+        }
+        
+        _apiResponse.IsSuccess = false;
+        _apiResponse.StatusCode = HttpStatusCode.BadRequest;
+        _apiResponse.Message = "Payment verification failed";
+        return BadRequest(_apiResponse);
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, "Error verifying payment");
+        _apiResponse.StatusCode = HttpStatusCode.InternalServerError;
+        _apiResponse.Message = "Something went wrong";
+        _apiResponse.Errors = new List<string> { ex.Message };
+        
+        return StatusCode(500, _apiResponse);
+    }
+}
     
     /// <summary>
     /// Get donation statistics

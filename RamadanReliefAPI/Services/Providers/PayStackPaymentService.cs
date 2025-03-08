@@ -99,4 +99,17 @@ public class PayStackPaymentService : IPayStackPaymentService
             };
         }
     }
+
+    public TransactionVerifyResponse VerifyTransaction(string reference)
+    {
+        try
+        {
+            return PayStackApi.Transactions.Verify(reference);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, $"Error verifying transaction {reference}");
+            return null;
+        }
+    }
 }
