@@ -127,8 +127,10 @@ builder.Services.AddHttpClient();
 var actorSystem = ActorSystem.Create("ramadan-actor-system");
 builder.Services.AddSingleton(actorSystem);
 
-builder.Services.AddScoped<IPayStackPaymentService, PayStackPaymentService>();
+builder.Services.AddHostedService<PaymentVerificationService>();
 
+builder.Services.AddHttpClient();
+builder.Services.AddScoped<IPayStackPaymentService, PayStackPaymentService>();
 
 var app = builder.Build();
 

@@ -15,7 +15,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("RamadanReliefAPI")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b38e456efb7d2ec0d847c87e9624f7faae00bed7")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0e81333202b0e6d49d84ca13b98b651e3bf7c79b")]
 [assembly: System.Reflection.AssemblyProductAttribute("RamadanReliefAPI")]
 [assembly: System.Reflection.AssemblyTitleAttribute("RamadanReliefAPI")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

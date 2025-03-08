@@ -27,20 +27,36 @@
             <summary>
             Create a donation and generate a payment link
             </summary>
-            <param name="donationRequest">Donation request</param>
-            <returns>Payment link</returns>
         </member>
         <member name="M:RamadanReliefAPI.Controllers.DonationsController.PayStackWebhook">
             <summary>
             Webhook for PayStack to update payment status
             </summary>
-            <returns></returns>
+        </member>
+        <member name="M:RamadanReliefAPI.Controllers.DonationsController.CheckPaymentStatus(System.String)">
+            <summary>
+            Manual check to verify payment status for a donation
+            </summary>
+        </member>
+        <member name="M:RamadanReliefAPI.Controllers.DonationsController.VerifyPayment(System.String)">
+            <summary>
+            Manual verification endpoint for admin use
+            </summary>
+        </member>
+        <member name="M:RamadanReliefAPI.Controllers.DonationsController.ListDonations">
+            <summary>
+            Lists all donations with their status - for debugging
+            </summary>
+        </member>
+        <member name="M:RamadanReliefAPI.Controllers.DonationsController.ForceStatus(System.String,System.String)">
+            <summary>
+            Manually set a donation status - for debugging
+            </summary>
         </member>
         <member name="M:RamadanReliefAPI.Controllers.DonationsController.GetStatistics">
             <summary>
             Get donation statistics
             </summary>
-            <returns>Donation statistics</returns>
         </member>
         <member name="M:RamadanReliefAPI.Controllers.NewsLetterController.CreateNewsLetter(RamadanReliefAPI.Controllers.SendNewsLettersRequest)">
             <summary>
@@ -83,6 +99,18 @@
             <inheritdoc />
         </member>
         <member name="M:RamadanReliefAPI.Migrations.paystack.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:RamadanReliefAPI.Migrations.actors">
+            <inheritdoc />
+        </member>
+        <member name="M:RamadanReliefAPI.Migrations.actors.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:RamadanReliefAPI.Migrations.actors.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:RamadanReliefAPI.Migrations.actors.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
             <inheritdoc />
         </member>
     </members>

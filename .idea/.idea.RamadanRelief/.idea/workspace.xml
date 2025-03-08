@@ -11,16 +11,14 @@
   <component name="ChangeListManager">
     <list default="true" id="ed697c49-5884-4b72-80d0-df5326a0f8b1" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/.idea.RamadanRelief/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/.idea.RamadanRelief/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RamadanReliefAPI/Controllers/AuthController.cs" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/RamadanReliefAPI/Actors/DonationActor.cs" beforeDir="false" afterPath="$PROJECT_DIR$/RamadanReliefAPI/Actors/DonationActor.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/RamadanReliefAPI/Controllers/DonationsController.cs" beforeDir="false" afterPath="$PROJECT_DIR$/RamadanReliefAPI/Controllers/DonationsController.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RamadanReliefAPI/Services/Interfaces/IPayStackPaymentService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/RamadanReliefAPI/Services/Interfaces/IPayStackPaymentService.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RamadanReliefAPI/Services/Providers/PayStackPaymentService.cs" beforeDir="false" afterPath="$PROJECT_DIR$/RamadanReliefAPI/Services/Providers/PayStackPaymentService.cs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RamadanReliefAPI/Services/Providers/PaystackService.cs" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/RamadanReliefAPI/appsettings.json" beforeDir="false" afterPath="$PROJECT_DIR$/RamadanReliefAPI/appsettings.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RamadanReliefAPI/Program.cs" beforeDir="false" afterPath="$PROJECT_DIR$/RamadanReliefAPI/Program.cs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RamadanReliefAPI/bin/Debug/RamadanReliefAPI.xml" beforeDir="false" afterPath="$PROJECT_DIR$/RamadanReliefAPI/bin/Debug/RamadanReliefAPI.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/RamadanReliefAPI/bin/Debug/net8.0/RamadanReliefAPI.dll" beforeDir="false" afterPath="$PROJECT_DIR$/RamadanReliefAPI/bin/Debug/net8.0/RamadanReliefAPI.dll" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/RamadanReliefAPI/bin/Debug/net8.0/RamadanReliefAPI.exe" beforeDir="false" afterPath="$PROJECT_DIR$/RamadanReliefAPI/bin/Debug/net8.0/RamadanReliefAPI.exe" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/RamadanReliefAPI/bin/Debug/net8.0/RamadanReliefAPI.pdb" beforeDir="false" afterPath="$PROJECT_DIR$/RamadanReliefAPI/bin/Debug/net8.0/RamadanReliefAPI.pdb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/RamadanReliefAPI/bin/Debug/net8.0/appsettings.json" beforeDir="false" afterPath="$PROJECT_DIR$/RamadanReliefAPI/bin/Debug/net8.0/appsettings.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/RamadanReliefAPI/bin/Debug/net8.0/RamadanReliefAPI.xml" beforeDir="false" afterPath="$PROJECT_DIR$/RamadanReliefAPI/bin/Debug/net8.0/RamadanReliefAPI.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/RamadanReliefAPI/obj/Debug/net8.0/RamadanReliefAPI.AssemblyInfo.cs" beforeDir="false" afterPath="$PROJECT_DIR$/RamadanReliefAPI/obj/Debug/net8.0/RamadanReliefAPI.AssemblyInfo.cs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/RamadanReliefAPI/obj/Debug/net8.0/RamadanReliefAPI.AssemblyInfoInputs.cache" beforeDir="false" afterPath="$PROJECT_DIR$/RamadanReliefAPI/obj/Debug/net8.0/RamadanReliefAPI.AssemblyInfoInputs.cache" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/RamadanReliefAPI/obj/Debug/net8.0/RamadanReliefAPI.csproj.CoreCompileInputs.cache" beforeDir="false" afterPath="$PROJECT_DIR$/RamadanReliefAPI/obj/Debug/net8.0/RamadanReliefAPI.csproj.CoreCompileInputs.cache" afterDir="false" />
@@ -41,6 +39,18 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
+  "lastFilter": {
+    "state": "OPEN",
+    "assignee": "NanaWhan"
+  }
+}]]></component>
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/NanaWhan/RamadanApi.git",
+    "accountId": "472b7619-7a7f-455a-bf73-a1ffcb6955af"
+  }
+}]]></component>
   <component name="MetaFilesCheckinStateConfiguration" checkMetaFiles="true" />
   <component name="ProjectColorInfo"><![CDATA[{
   "associatedIndex": 0
@@ -75,6 +85,7 @@
       <option name="USE_EXTERNAL_CONSOLE" value="0" />
       <option name="USE_MONO" value="0" />
       <option name="RUNTIME_ARGUMENTS" value="" />
+      <browser name="98ca6316-2f89-46d9-a9e5-fa9e2b0625b3" />
       <option name="GENERATE_APPLICATIONHOST_CONFIG" value="1" />
       <option name="SHOW_IIS_EXPRESS_OUTPUT" value="0" />
       <option name="SEND_DEBUG_REQUEST" value="1" />
@@ -113,6 +124,11 @@
         <option name="Build" />
       </method>
     </configuration>
+    <list>
+      <item itemvalue=".NET Launch Settings Profile.RamadanReliefAPI: http" />
+      <item itemvalue=".NET Launch Settings Profile.RamadanReliefAPI: https" />
+      <item itemvalue=".NET Launch Settings Profile.RamadanReliefAPI: IIS Express" />
+    </list>
   </component>
   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
   <component name="TaskManager">
@@ -122,7 +138,7 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1741334363481</updated>
-      <workItem from="1741334364747" duration="31136000" />
+      <workItem from="1741334364747" duration="35018000" />
     </task>
     <servers />
   </component>
