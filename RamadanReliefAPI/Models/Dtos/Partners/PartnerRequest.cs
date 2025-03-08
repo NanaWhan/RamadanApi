@@ -1,11 +1,14 @@
 ﻿using System.ComponentModel.DataAnnotations;
 
-namespace RamadanReliefAPI.Models.Dtos.Volunteer;
+namespace RamadanReliefAPI.Models.Dtos.Partners;
 
-public class VolunteerRequest
+public class PartnerRequest
 {
-    [Required(ErrorMessage = "Name is required")]
-    public string Name { get; set; }
+    [Required(ErrorMessage = "Organization name is required")]
+    public string OrganizationName { get; set; }
+    
+    [Required(ErrorMessage = "Contact person name is required")]
+    public string ContactPerson { get; set; }
     
     [Required(ErrorMessage = "Email is required")]
     [EmailAddress(ErrorMessage = "Invalid email address")]
@@ -16,9 +19,5 @@ public class VolunteerRequest
     
     public string? City { get; set; }
     
-    public List<string>? Interests { get; set; }
-    
-    public List<string>? Availability { get; set; }
-    
-    public string? Message { get; set; }
+    public string Message { get; set; }
 }

@@ -65,6 +65,51 @@
             <param name="sendNewsLettersRequest"></param>
             <returns></returns>
         </member>
+        <member name="M:RamadanReliefAPI.Controllers.PartnersController.RegisterPartner(RamadanReliefAPI.Models.Dtos.Partners.PartnerRequest)">
+            <summary>
+            Register a new partner organization
+            </summary>
+        </member>
+        <member name="M:RamadanReliefAPI.Controllers.PartnersController.GetAllPartners">
+            <summary>
+            Get all partners
+            </summary>
+        </member>
+        <member name="M:RamadanReliefAPI.Controllers.PartnersController.GetPartnerById(System.Guid)">
+            <summary>
+            Get partner by ID
+            </summary>
+        </member>
+        <member name="M:RamadanReliefAPI.Controllers.PartnersController.UpdatePartnerStatus(System.Guid,System.Boolean)">
+            <summary>
+            Update partner status (activate/deactivate)
+            </summary>
+        </member>
+        <member name="M:RamadanReliefAPI.Controllers.PartnersController.SendMessageToPartners(RamadanReliefAPI.Models.Dtos.SendMessageRequest)">
+            <summary>
+            Send message to all partners
+            </summary>
+        </member>
+        <member name="M:RamadanReliefAPI.Controllers.PartnersController.SendMessageToPartner(System.Guid,RamadanReliefAPI.Models.Dtos.SendMessageRequest)">
+            <summary>
+            Send message to a specific partner
+            </summary>
+        </member>
+        <member name="M:RamadanReliefAPI.Controllers.VolunteersController.RegisterVolunteer(RamadanReliefAPI.Models.Dtos.Volunteer.VolunteerRequest)">
+            <summary>
+            Register a new volunteer
+            </summary>
+        </member>
+        <member name="M:RamadanReliefAPI.Controllers.VolunteersController.GetAllVolunteers">
+            <summary>
+            Get all volunteers
+            </summary>
+        </member>
+        <member name="M:RamadanReliefAPI.Controllers.VolunteersController.SendMessageToVolunteers(RamadanReliefAPI.Models.Dtos.SendMessageRequest)">
+            <summary>
+            Send message to all volunteers
+            </summary>
+        </member>
         <member name="T:RamadanReliefAPI.Migrations.Initial">
             <inheritdoc />
         </member>
@@ -111,6 +156,18 @@
             <inheritdoc />
         </member>
         <member name="M:RamadanReliefAPI.Migrations.actors.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="T:RamadanReliefAPI.Migrations.partners">
+            <inheritdoc />
+        </member>
+        <member name="M:RamadanReliefAPI.Migrations.partners.Up(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:RamadanReliefAPI.Migrations.partners.Down(Microsoft.EntityFrameworkCore.Migrations.MigrationBuilder)">
+            <inheritdoc />
+        </member>
+        <member name="M:RamadanReliefAPI.Migrations.partners.BuildTargetModel(Microsoft.EntityFrameworkCore.ModelBuilder)">
             <inheritdoc />
         </member>
     </members>

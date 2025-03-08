@@ -9,6 +9,6 @@ public class Partners
     public string Email { get; set; }
     public string? City { get; set; }
     public string Message { get; set; }
-    public DateTime RegistrationDate { get; set; }
+    public DateTime RegistrationDate { get; set; } = DateTime.UtcNow;
     public bool IsActive { get; set; } = true;
 }

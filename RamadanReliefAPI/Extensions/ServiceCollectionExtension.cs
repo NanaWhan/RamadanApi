@@ -30,6 +30,9 @@ public static class ServiceCollectionExtension
         builder.RegisterType<TopLevelActor>();
         builder.RegisterType<MainActor>();
         builder.RegisterType<DonationActor>();
+        builder.RegisterType<VolunteerActor>();
+        builder.RegisterType<PartnerActor>();
+        
         builder.Register(context =>
         {
             // Your DbContext configuration logic here (e.g., connection string)
@@ -62,6 +65,22 @@ public static class ServiceCollectionExtension
                 .Props<DonationActor>()
                 .WithSupervisorStrategy(TopLevelActor.GetDefaultSupervisorStrategy),
             nameof(DonationActor)
+        );
+        
+        TopLevelActor.VolunteerActor = actorSystem.ActorOf(
+            actorSystem
+                .DI()
+                .Props<VolunteerActor>()
+                .WithSupervisorStrategy(TopLevelActor.GetDefaultSupervisorStrategy),
+            nameof(VolunteerActor)
+        );
+        
+        TopLevelActor.PartnerActor = actorSystem.ActorOf(
+            actorSystem
+                .DI()
+                .Props<PartnerActor>()
+                .WithSupervisorStrategy(TopLevelActor.GetDefaultSupervisorStrategy),
+            nameof(PartnerActor)
         );
 
         return services;

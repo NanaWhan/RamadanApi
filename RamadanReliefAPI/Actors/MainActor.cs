@@ -49,9 +49,10 @@ public class MainActor : BaseActor
             );
 
             var smsKey = "2nwkmCOVenT5pV0BZMFFiDnsn";
-            var mnotifyResponse = await httpClient.PostAsync(
-                $"https://api.mnotify.com/api/sms/quick?key=" + smsKey,
-                body
+            var sender = "RamRelief25";
+            var message = "Welcome to Ramadan Relief. We are glad to have you on board. We will be sending you updates on our activities. Stay tuned.";
+            var mnotifyResponse = await httpClient.GetAsync(
+                $"https://apps.mnotify.net/smsapi?key={smsKey}&to={newsLetterMessage.PhoneNumber}&msg={Uri.EscapeDataString(message)}&sender_id={sender}"
             );
 
             var result = await mnotifyResponse.Content.ReadAsStringAsync();
