@@ -109,7 +109,7 @@ public class DonationActor : BaseActor
                 schedule_date = "",
                 is_schedule = "false",
                 message = message,
-                sender = "Ramadan",
+                sender = "RR'25",
                 recipient = new List<string>() { donation.DonorPhone }
             };
             

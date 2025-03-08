@@ -6,10 +6,9 @@ public class Volunteer
     public string Name { get; set; }
     public string Email { get; set; }
     public string Phone { get; set; }
-    public string City { get; set; }
-    public List<string> Interests { get; set; } = new List<string>();
-    public List<string> Availability { get; set; } = new List<string>();
+    public string? City { get; set; }
     public string? Message { get; set; }
     public DateTime RegistrationDate { get; set; }
     public bool IsActive { get; set; } = true;
 }
+
