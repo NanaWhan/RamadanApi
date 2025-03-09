@@ -26,6 +26,7 @@ builder.Services.AddControllers();
 // Configure Supabase client
 var url = "https://samobihwxdfcbxpmqkqc.supabase.co";
 var supabsekey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNhbW9iaWh3eGRmY2J4cG1xa3FjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDA5NzUxNTYsImV4cCI6MjA1NjU1MTE1Nn0.icy6G2XjKTZHUQDM5B_p5GSsw3LWlqYzpldL4hhJwJg";
+
 var options = new SupabaseOptions()
 {
     AutoRefreshToken = true,
@@ -55,6 +56,10 @@ builder.Services.AddHostedService<ActorSystemHealthService>();
 
 // Configure JWT Authentication
 var key = builder.Configuration.GetValue<string>("ApiSettings:Secret");
+builder.Configuration
+    .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+    .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional: true)
+    .AddUserSecrets<Program>(optional: true);
 builder.Services.AddAuthentication(x =>
 {
     x.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
