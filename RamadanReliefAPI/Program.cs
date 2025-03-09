@@ -124,6 +124,7 @@ builder.Services.AddSwaggerGen(options =>
 // Build the application
 var app = builder.Build();
 
+
 // Configure middleware pipeline
 app.UseCors(corsPolicyName);
 
