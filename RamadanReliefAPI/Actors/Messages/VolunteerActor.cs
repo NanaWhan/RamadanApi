@@ -30,25 +30,26 @@ public class VolunteerActor : BaseActor
     private async Task ProcessVolunteerRegistration(VolunteerRegisteredMessage message)
     {
         _logger.LogInformation($"VolunteerActor received registration message for: {message.Email}");
-        
+
         try
         {
             // Find the volunteer to ensure they exist
             var volunteer = await _db.Volunteers
                 .AsNoTracking()
                 .FirstOrDefaultAsync(v => v.Id == message.VolunteerId);
-                
+
             if (volunteer == null)
             {
                 _logger.LogWarning($"VolunteerActor: Volunteer not found in database: {message.VolunteerId}");
                 return;
             }
-            
-            _logger.LogInformation($"VolunteerActor: Found volunteer. Name: {volunteer.Name}, Email: {volunteer.Email}");
-            
+
+            _logger.LogInformation(
+                $"VolunteerActor: Found volunteer. Name: {volunteer.Name}, Email: {volunteer.Email}");
+
             // Send welcome message
             await SendWelcomeSms(volunteer);
-            
+
             _logger.LogInformation($"VolunteerActor: Successfully processed volunteer registration: {volunteer.Id}");
         }
         catch (Exception ex)
@@ -60,11 +61,12 @@ public class VolunteerActor : BaseActor
     private async Task SendWelcomeSms(Volunteer volunteer)
     {
         _logger.LogInformation($"VolunteerActor: Preparing to send welcome SMS for volunteer: {volunteer.Id}");
-        
+
         // Skip if no phone number is provided
         if (string.IsNullOrEmpty(volunteer.Phone))
         {
-            _logger.LogInformation($"VolunteerActor: No phone number provided for volunteer: {volunteer.Id}, skipping SMS notification");
+            _logger.LogInformation(
+                $"VolunteerActor: No phone number provided for volunteer: {volunteer.Id}, skipping SMS notification");
             return;
         }
 
@@ -73,47 +75,56 @@ public class VolunteerActor : BaseActor
             _logger.LogInformation($"VolunteerActor: Creating service scope for SMS sending");
             using var scope = _serviceProvider.CreateScope();
             var httpClient = scope.ServiceProvider.GetRequiredService<HttpClient>();
-            
-            var message = $"Thank you for volunteering with Ramadan Relief! Your support is greatly appreciated. We will contact you soon with more information about upcoming volunteer opportunities.";
-            _logger.LogInformation($"VolunteerActor: SMS message: {message}");
-            
-            _logger.LogInformation($"VolunteerActor: Creating SMS request body for {volunteer.Phone}");
-            var postBody = new SmsBody()
+
+            // Ensure the phone number is properly formatted
+            var cleanedPhoneNumber = volunteer.Phone.Trim().Replace(" ", "");
+            if (!cleanedPhoneNumber.StartsWith("+"))
             {
-                schedule_date = "",
-                is_schedule = "false",
-                message = message,
-                sender = "RamRelief25",
-                recipient = new List<string>() { volunteer.Phone }
-            };
-            
-            _logger.LogInformation($"VolunteerActor: Serializing SMS request body");
-            HttpContent body = new StringContent(
-                System.Text.Json.JsonSerializer.Serialize(postBody),
-                Encoding.UTF8,
-                "application/json"
-            );
+                // Assume Ghana number if no country code provided
+                if (cleanedPhoneNumber.StartsWith("0"))
+                {
+                    cleanedPhoneNumber = "+233" + cleanedPhoneNumber.Substring(1);
+                }
+                else
+                {
+                    cleanedPhoneNumber = "+233" + cleanedPhoneNumber;
+                }
+            }
+
+            var message =
+                $"Thank you for volunteering with Ramadan Relief! Your support is greatly appreciated. We will contact you soon with more information about upcoming volunteer opportunities.";
+            _logger.LogInformation($"VolunteerActor: SMS message: {message}");
 
             var smsKey = "2nwkmCOVenT5pV0BZMFFiDnsn";
-            _logger.LogInformation($"VolunteerActor: Sending SMS request to mNotify API");
-            var mnotifyResponse = await httpClient.GetAsync(
-                $"https://apps.mnotify.net/smsapi?key={smsKey}&to={volunteer.Phone}&msg={Uri.EscapeDataString(message)}&sender_id=RamRelief25"
-            );
+            var sender = "RamRelief25";
+
+            // Properly encode the message for URL transmission
+            var encodedMessage = Uri.EscapeDataString(message);
+            var requestUrl =
+                $"https://apps.mnotify.net/smsapi?key={smsKey}&to={cleanedPhoneNumber}&msg={encodedMessage}&sender_id={sender}";
+
+            _logger.LogInformation($"VolunteerActor: Sending SMS request to mNotify API: {requestUrl}");
+            var mnotifyResponse = await httpClient.GetAsync(requestUrl);
+
+            var responseContent = await mnotifyResponse.Content.ReadAsStringAsync();
+            _logger.LogInformation(
+                $"VolunteerActor: mNotify API response: {mnotifyResponse.StatusCode} - {responseContent}");
 
             if (mnotifyResponse.IsSuccessStatusCode)
             {
-                var result = await mnotifyResponse.Content.ReadAsStringAsync();
-                _logger.LogInformation($"VolunteerActor: SMS notification sent successfully for {volunteer.Id}. Result: {result}");
+                _logger.LogInformation(
+                    $"VolunteerActor: SMS notification sent successfully for {volunteer.Id}. Result: {responseContent}");
             }
             else
             {
-                var errorContent = await mnotifyResponse.Content.ReadAsStringAsync();
-                _logger.LogWarning($"VolunteerActor: Failed to send SMS for {volunteer.Id}. Status: {mnotifyResponse.StatusCode}, Error: {errorContent}");
+                _logger.LogWarning(
+                    $"VolunteerActor: Failed to send SMS for {volunteer.Id}. Status: {mnotifyResponse.StatusCode}, Error: {responseContent}");
             }
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, $"VolunteerActor: Error sending welcome SMS for volunteer: {volunteer.Id}");
+            // We don't rethrow here as SMS failure shouldn't stop the entire process
         }
     }
 }

@@ -30,25 +30,26 @@ public class PartnerActor : BaseActor
     private async Task ProcessPartnerRegistration(PartnerRegisteredMessage message)
     {
         _logger.LogInformation($"PartnerActor received registration message for: {message.Email}");
-        
+
         try
         {
             // Find the partner to ensure they exist
             var partner = await _db.Partners
                 .AsNoTracking()
                 .FirstOrDefaultAsync(p => p.Id == message.PartnerId);
-                
+
             if (partner == null)
             {
                 _logger.LogWarning($"PartnerActor: Partner not found in database: {message.PartnerId}");
                 return;
             }
-            
-            _logger.LogInformation($"PartnerActor: Found partner. Organization: {partner.OrganizationName}, Contact: {partner.ContactPerson}");
-            
+
+            _logger.LogInformation(
+                $"PartnerActor: Found partner. Organization: {partner.OrganizationName}, Contact: {partner.ContactPerson}");
+
             // Send welcome message
             await SendWelcomeSms(partner);
-            
+
             _logger.LogInformation($"PartnerActor: Successfully processed partner registration: {partner.Id}");
         }
         catch (Exception ex)
@@ -60,11 +61,12 @@ public class PartnerActor : BaseActor
     private async Task SendWelcomeSms(Partners partner)
     {
         _logger.LogInformation($"PartnerActor: Preparing to send welcome SMS for partner: {partner.Id}");
-        
+
         // Skip if no phone number is provided
         if (string.IsNullOrEmpty(partner.Phone))
         {
-            _logger.LogInformation($"PartnerActor: No phone number provided for partner: {partner.Id}, skipping SMS notification");
+            _logger.LogInformation(
+                $"PartnerActor: No phone number provided for partner: {partner.Id}, skipping SMS notification");
             return;
         }
 
@@ -73,47 +75,56 @@ public class PartnerActor : BaseActor
             _logger.LogInformation($"PartnerActor: Creating service scope for SMS sending");
             using var scope = _serviceProvider.CreateScope();
             var httpClient = scope.ServiceProvider.GetRequiredService<HttpClient>();
-            
-            var message = $"Thank you for partnering with Ramadan Relief, {partner.OrganizationName}! We value your support and will be in touch soon to discuss our collaboration further.";
-            _logger.LogInformation($"PartnerActor: SMS message: {message}");
-            
-            _logger.LogInformation($"PartnerActor: Creating SMS request body for {partner.Phone}");
-            var postBody = new SmsBody()
+
+            // Ensure the phone number is properly formatted
+            var cleanedPhoneNumber = partner.Phone.Trim().Replace(" ", "");
+            if (!cleanedPhoneNumber.StartsWith("+"))
             {
-                schedule_date = "",
-                is_schedule = "false",
-                message = message,
-                sender = "RamRelief25",
-                recipient = new List<string>() { partner.Phone }
-            };
-            
-            _logger.LogInformation($"PartnerActor: Serializing SMS request body");
-            HttpContent body = new StringContent(
-                System.Text.Json.JsonSerializer.Serialize(postBody),
-                Encoding.UTF8,
-                "application/json"
-            );
+                // Assume Ghana number if no country code provided
+                if (cleanedPhoneNumber.StartsWith("0"))
+                {
+                    cleanedPhoneNumber = "+233" + cleanedPhoneNumber.Substring(1);
+                }
+                else
+                {
+                    cleanedPhoneNumber = "+233" + cleanedPhoneNumber;
+                }
+            }
+
+            var message =
+                $"Thank you for partnering with Ramadan Relief, {partner.OrganizationName}! We value your support and will be in touch soon to discuss our collaboration further.";
+            _logger.LogInformation($"PartnerActor: SMS message: {message}");
 
             var smsKey = "2nwkmCOVenT5pV0BZMFFiDnsn";
-            _logger.LogInformation($"PartnerActor: Sending SMS request to mNotify API");
-            var mnotifyResponse = await httpClient.GetAsync(
-                $"https://apps.mnotify.net/smsapi?key={smsKey}&to={partner.Phone}&msg={Uri.EscapeDataString(message)}&sender_id=RamRelief25"
-            );
+            var sender = "RamRelief25";
+
+            // Properly encode the message for URL transmission
+            var encodedMessage = Uri.EscapeDataString(message);
+            var requestUrl =
+                $"https://apps.mnotify.net/smsapi?key={smsKey}&to={cleanedPhoneNumber}&msg={encodedMessage}&sender_id={sender}";
+
+            _logger.LogInformation($"PartnerActor: Sending SMS request to mNotify API: {requestUrl}");
+            var mnotifyResponse = await httpClient.GetAsync(requestUrl);
+
+            var responseContent = await mnotifyResponse.Content.ReadAsStringAsync();
+            _logger.LogInformation(
+                $"PartnerActor: mNotify API response: {mnotifyResponse.StatusCode} - {responseContent}");
 
             if (mnotifyResponse.IsSuccessStatusCode)
             {
-                var result = await mnotifyResponse.Content.ReadAsStringAsync();
-                _logger.LogInformation($"PartnerActor: SMS notification sent successfully for {partner.Id}. Result: {result}");
+                _logger.LogInformation(
+                    $"PartnerActor: SMS notification sent successfully for {partner.Id}. Result: {responseContent}");
             }
             else
             {
-                var errorContent = await mnotifyResponse.Content.ReadAsStringAsync();
-                _logger.LogWarning($"PartnerActor: Failed to send SMS for {partner.Id}. Status: {mnotifyResponse.StatusCode}, Error: {errorContent}");
+                _logger.LogWarning(
+                    $"PartnerActor: Failed to send SMS for {partner.Id}. Status: {mnotifyResponse.StatusCode}, Error: {responseContent}");
             }
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, $"PartnerActor: Error sending welcome SMS for partner: {partner.Id}");
+            // We don't rethrow here as SMS failure shouldn't stop the entire process
         }
     }
 }

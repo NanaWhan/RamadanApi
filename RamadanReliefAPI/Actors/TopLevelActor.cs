@@ -5,11 +5,11 @@ namespace RamadanReliefAPI.Actors;
 
 public class TopLevelActor
 {
-    public static IActorRef MainActor = ActorRefs.Nobody;
-    public static IActorRef DonationActor = ActorRefs.Nobody;
-    public static IActorRef VolunteerActor = ActorRefs.Nobody;
-    public static IActorRef PartnerActor = ActorRefs.Nobody;
-    public static ActorSystem ActorSystem;
+    public static IActorRef MainActor { get; set; } = ActorRefs.Nobody;
+    public static IActorRef DonationActor { get; set; } = ActorRefs.Nobody;
+    public static IActorRef VolunteerActor { get; set; } = ActorRefs.Nobody;
+    public static IActorRef PartnerActor { get; set; } = ActorRefs.Nobody;
+    public static ActorSystem ActorSystem { get; set; }
 
     public static IActorRef GetActorInstance<T>(string name)
         where T : ActorBase =>
@@ -31,9 +31,6 @@ public class TopLevelActor
             }
         );
 
-    /// <summary>
-    /// This method stops the actor system
-    /// </summary>
     private static void Stop()
     {
         ActorSystem?.Terminate().Wait(1000);

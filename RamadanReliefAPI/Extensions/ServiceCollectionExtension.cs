@@ -11,77 +11,70 @@ namespace RamadanReliefAPI.Extensions;
 
 public static class ServiceCollectionExtension
 {
-    public static IServiceCollection AddActorSystem(
-        this IServiceCollection services,
-        string actorSystemName
-    )
+    public static IServiceCollection AddActorSystem(this IServiceCollection services, string actorSystemName)
     {
         if (services == null)
         {
             throw new ArgumentNullException(nameof(services));
         }
 
+        // Create the actor system
         var actorSystem = ActorSystem.Create(actorSystemName);
         services.AddSingleton(typeof(ActorSystem), sp => actorSystem);
 
+        // Register the actor system in the TopLevelActor static property
+        TopLevelActor.ActorSystem = actorSystem;
+
+        // Configure AutoFac
         var builder = new ContainerBuilder();
         builder.Populate(services);
-
-        builder.RegisterType<TopLevelActor>();
+        
+        // Register actor types explicitly
         builder.RegisterType<MainActor>();
         builder.RegisterType<DonationActor>();
         builder.RegisterType<VolunteerActor>();
         builder.RegisterType<PartnerActor>();
         
-        builder.Register(context =>
-        {
-            // Your DbContext configuration logic here (e.g., connection string)
-            var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-                .UseNpgsql(
-                    "User Id=postgres.samobihwxdfcbxpmqkqc;Password=mezttr8q3x9OuBhQ;Server=aws-0-eu-central-1.pooler.supabase.com;Port=5432;Database=postgres"
-                )
-                .Options;
-            return options;
-        });
-        
-
         var container = builder.Build();
 
+        // Create DI resolver for Akka
         var resolver = new AutoFacDependencyResolver(container, actorSystem);
 
-        TopLevelActor.ActorSystem = actorSystem;
+        // Define supervisor strategy
+        var supervisorStrategy = new OneForOneStrategy(
+            maxNrOfRetries: 10,
+            withinTimeRange: TimeSpan.FromMinutes(1),
+            ex => Directive.Restart);
 
-        TopLevelActor.MainActor = actorSystem.ActorOf(
-            actorSystem
-                .DI()
-                .Props<MainActor>()
-                .WithSupervisorStrategy(TopLevelActor.GetDefaultSupervisorStrategy),
-            nameof(MainActor)
-        );
-        
-        TopLevelActor.DonationActor = actorSystem.ActorOf(
-            actorSystem
-                .DI()
-                .Props<DonationActor>()
-                .WithSupervisorStrategy(TopLevelActor.GetDefaultSupervisorStrategy),
-            nameof(DonationActor)
-        );
-        
-        TopLevelActor.VolunteerActor = actorSystem.ActorOf(
-            actorSystem
-                .DI()
-                .Props<VolunteerActor>()
-                .WithSupervisorStrategy(TopLevelActor.GetDefaultSupervisorStrategy),
-            nameof(VolunteerActor)
-        );
-        
-        TopLevelActor.PartnerActor = actorSystem.ActorOf(
-            actorSystem
-                .DI()
-                .Props<PartnerActor>()
-                .WithSupervisorStrategy(TopLevelActor.GetDefaultSupervisorStrategy),
-            nameof(PartnerActor)
-        );
+        try
+        {
+            // Use DI-based actor creation
+            TopLevelActor.MainActor = actorSystem.ActorOf(
+                actorSystem.DI().Props<MainActor>().WithSupervisorStrategy(supervisorStrategy),
+                "MainActor"
+            );
+
+            TopLevelActor.DonationActor = actorSystem.ActorOf(
+                actorSystem.DI().Props<DonationActor>().WithSupervisorStrategy(supervisorStrategy),
+                "DonationActor"
+            );
+
+            TopLevelActor.VolunteerActor = actorSystem.ActorOf(
+                actorSystem.DI().Props<VolunteerActor>().WithSupervisorStrategy(supervisorStrategy),
+                "VolunteerActor"
+            );
+
+            TopLevelActor.PartnerActor = actorSystem.ActorOf(
+                actorSystem.DI().Props<PartnerActor>().WithSupervisorStrategy(supervisorStrategy),
+                "PartnerActor"
+            );
+        }
+        catch (Exception ex)
+        {
+            // Log the error during actor creation
+            Console.WriteLine($"Failed to initialize actors: {ex.Message}");
+            throw;
+        }
 
         return services;
     }

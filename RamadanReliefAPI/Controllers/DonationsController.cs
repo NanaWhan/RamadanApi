@@ -49,7 +49,7 @@ public class DonationsController : ControllerBase
             // Generate a unique reference for this transaction
             string reference = $"RR-DON-{Guid.NewGuid().ToString("N").Substring(0, 8)}";
             _logger.LogInformation($"Creating new donation with reference: {reference}");
-            
+
             // Create and save the donation record with pending status
             var donation = new Donation
             {
@@ -64,18 +64,18 @@ public class DonationsController : ControllerBase
                 DonorPhone = donationRequest.DonorPhone,
                 CampaignSource = donationRequest.CampaignSource
             };
-            
+
             await _db.Donations.AddAsync(donation);
             await _db.SaveChangesAsync();
             _logger.LogInformation($"Donation record created in database with id: {donation.Id}");
-            
+
             // Create a temporary user for payment processing
             var tempUser = new User
             {
                 Email = donationRequest.DonorEmail ?? "anonymous@ramadanrelief.org",
                 Username = donationRequest.DonorName ?? "Anonymous Donor"
             };
-            
+
             // Prepare payment request
             var paymentRequest = new GenericPaymentRequest
             {
@@ -85,29 +85,32 @@ public class DonationsController : ControllerBase
                 ClientReference = reference,
                 IsGroupTicket = false
             };
-            
+
             // Generate payment link
             _logger.LogInformation($"Generating payment link for reference: {reference}");
             var paymentResponse = await _payStackPaymentService.CreatePayLink(paymentRequest);
-            
+
             if (!paymentResponse.IsSuccess)
             {
-                _logger.LogWarning($"Failed to generate payment link for reference: {reference}. Message: {paymentResponse.Message}");
+                _logger.LogWarning(
+                    $"Failed to generate payment link for reference: {reference}. Message: {paymentResponse.Message}");
                 _apiResponse.IsSuccess = false;
                 _apiResponse.StatusCode = HttpStatusCode.BadRequest;
                 _apiResponse.Message = "Failed to generate payment link";
                 return BadRequest(_apiResponse);
             }
-            
-            _logger.LogInformation($"Payment link generated successfully for reference: {reference}. URL: {paymentResponse.PayLinkUrl}");
+
+            _logger.LogInformation(
+                $"Payment link generated successfully for reference: {reference}. URL: {paymentResponse.PayLinkUrl}");
             _apiResponse.IsSuccess = true;
             _apiResponse.StatusCode = HttpStatusCode.OK;
             _apiResponse.Message = "Donation initiated successfully";
-            _apiResponse.Result = new { 
+            _apiResponse.Result = new
+            {
                 PaymentLink = paymentResponse.PayLinkUrl,
                 Reference = reference
             };
-            
+
             return Ok(_apiResponse);
         }
         catch (Exception ex)
@@ -116,11 +119,11 @@ public class DonationsController : ControllerBase
             _apiResponse.StatusCode = HttpStatusCode.InternalServerError;
             _apiResponse.Message = "Something went wrong while processing your donation";
             _apiResponse.Errors = new List<string> { ex.Message };
-            
+
             return StatusCode(500, _apiResponse);
         }
     }
-    
+
     /// <summary>
     /// Webhook for PayStack to update payment status
     /// </summary>
@@ -129,44 +132,46 @@ public class DonationsController : ControllerBase
     public async Task<IActionResult> PayStackWebhook()
     {
         string rawBody = string.Empty;
-        
+
         try
         {
             // Read the request body
             using var reader = new StreamReader(Request.Body);
             rawBody = await reader.ReadToEndAsync();
-            
+
             _logger.LogInformation($"Received PayStack webhook. Raw payload: {rawBody}");
-            
+
             // Parse the webhook payload
             var paymentInfo = System.Text.Json.JsonSerializer.Deserialize<PayStackWebhookDto>(rawBody);
-            
-            _logger.LogInformation($"Parsed webhook data. Event: {paymentInfo?.Event}, Reference: {paymentInfo?.Data?.Reference}, Status: {paymentInfo?.Data?.Status}");
-            
+
+            _logger.LogInformation(
+                $"Parsed webhook data. Event: {paymentInfo?.Event}, Reference: {paymentInfo?.Data?.Reference}, Status: {paymentInfo?.Data?.Status}");
+
             if (paymentInfo?.Data?.Reference != null)
             {
                 string reference = paymentInfo.Data.Reference;
-                
+
                 // Find the corresponding donation
-                var donation = await _db.Donations.FirstOrDefaultAsync(d => 
+                var donation = await _db.Donations.FirstOrDefaultAsync(d =>
                     d.TransactionReference == reference);
-                
+
                 if (donation == null)
                 {
                     _logger.LogWarning($"Donation not found for reference: {reference}");
                     return Ok(); // Return OK to prevent PayStack from retrying
                 }
-                
-                _logger.LogInformation($"Found donation for reference: {reference}. Current status: {donation.PaymentStatus}");
-                
+
+                _logger.LogInformation(
+                    $"Found donation for reference: {reference}. Current status: {donation.PaymentStatus}");
+
                 // Update donation status based on webhook event
                 if (paymentInfo.Event == "charge.success")
                 {
                     _logger.LogInformation($"Processing successful payment for reference: {reference}");
-                    
+
                     // Begin transaction to ensure data consistency
                     using var transaction = await _db.Database.BeginTransactionAsync();
-                    
+
                     try
                     {
                         // Only update status if not already successful
@@ -175,7 +180,7 @@ public class DonationsController : ControllerBase
                             _logger.LogInformation($"Updating donation status to SUCCESS for reference: {reference}");
                             donation.PaymentStatus = CommonConstants.TransactionStatus.Success;
                             await _db.SaveChangesAsync();
-                            
+
                             // Tell the actor system about the completed donation
                             _logger.LogInformation($"Sending message to DonationActor for reference: {reference}");
                             TopLevelActor.DonationActor.Tell(new DonationCompletedMessage(
@@ -183,14 +188,14 @@ public class DonationsController : ControllerBase
                                 donation.Amount,
                                 donation.DonorPhone
                             ));
-                            
+
                             _logger.LogInformation($"Message sent to actor system for reference: {reference}");
                         }
                         else
                         {
                             _logger.LogInformation($"Donation already marked as successful for reference: {reference}");
                         }
-                        
+
                         await transaction.CommitAsync();
                         _logger.LogInformation($"Transaction committed for reference: {reference}");
                     }
@@ -208,16 +213,17 @@ public class DonationsController : ControllerBase
                     donation.PaymentStatus = CommonConstants.TransactionStatus.Failed;
                     await _db.SaveChangesAsync();
                 }
-                else 
+                else
                 {
-                    _logger.LogInformation($"Received unhandled event type: {paymentInfo.Event} for reference: {reference}");
+                    _logger.LogInformation(
+                        $"Received unhandled event type: {paymentInfo.Event} for reference: {reference}");
                 }
             }
             else
             {
                 _logger.LogWarning("Webhook payload doesn't contain a reference");
             }
-            
+
             // Always return 200 to acknowledge receipt
             return Ok();
         }
@@ -228,7 +234,7 @@ public class DonationsController : ControllerBase
             return Ok();
         }
     }
-    
+
     /// <summary>
     /// Manual check to verify payment status for a donation
     /// </summary>
@@ -239,9 +245,9 @@ public class DonationsController : ControllerBase
         try
         {
             _logger.LogInformation($"Checking payment status for reference: {reference}");
-            
+
             var donation = await _db.Donations.FirstOrDefaultAsync(d => d.TransactionReference == reference);
-            
+
             if (donation == null)
             {
                 _logger.LogWarning($"Donation not found for reference: {reference}");
@@ -250,37 +256,41 @@ public class DonationsController : ControllerBase
                 _apiResponse.Message = "Donation not found";
                 return NotFound(_apiResponse);
             }
-            
-            _logger.LogInformation($"Found donation for reference: {reference}. Current status: {donation.PaymentStatus}");
-            
+
+            _logger.LogInformation(
+                $"Found donation for reference: {reference}. Current status: {donation.PaymentStatus}");
+
             // Verify with PayStack too
             var verification = _payStackPaymentService.VerifyTransaction(reference);
-            _logger.LogInformation($"PayStack verification response: {System.Text.Json.JsonSerializer.Serialize(verification)}");
-            
+            _logger.LogInformation(
+                $"PayStack verification response: {System.Text.Json.JsonSerializer.Serialize(verification)}");
+
             if (verification != null && verification.Status)
             {
                 _logger.LogInformation($"PayStack verification status: {verification.Data.Status}");
-                
+
                 // If PayStack says it's successful but our record doesn't, update it
-                if (verification.Data.Status == "success" && donation.PaymentStatus != CommonConstants.TransactionStatus.Success)
+                if (verification.Data.Status == "success" &&
+                    donation.PaymentStatus != CommonConstants.TransactionStatus.Success)
                 {
-                    _logger.LogInformation($"Payment verified as successful by PayStack but not in our system. Updating status for reference: {reference}");
-                    
+                    _logger.LogInformation(
+                        $"Payment verified as successful by PayStack but not in our system. Updating status for reference: {reference}");
+
                     // Begin transaction to ensure data consistency
                     using var transaction = await _db.Database.BeginTransactionAsync();
-                    
+
                     try
                     {
                         donation.PaymentStatus = CommonConstants.TransactionStatus.Success;
                         await _db.SaveChangesAsync();
-                        
+
                         // Tell the actor system about the completed donation
                         TopLevelActor.DonationActor.Tell(new DonationCompletedMessage(
                             donation.TransactionReference,
                             donation.Amount,
                             donation.DonorPhone
                         ));
-                        
+
                         await transaction.CommitAsync();
                         _logger.LogInformation($"Updated donation status to SUCCESS for reference: {reference}");
                     }
@@ -292,7 +302,7 @@ public class DonationsController : ControllerBase
                     }
                 }
             }
-            
+
             _apiResponse.IsSuccess = true;
             _apiResponse.StatusCode = HttpStatusCode.OK;
             _apiResponse.Message = "Payment status retrieved";
@@ -303,7 +313,7 @@ public class DonationsController : ControllerBase
                 Amount = donation.Amount,
                 Date = donation.DonationDate
             };
-            
+
             return Ok(_apiResponse);
         }
         catch (Exception ex)
@@ -312,11 +322,11 @@ public class DonationsController : ControllerBase
             _apiResponse.StatusCode = HttpStatusCode.InternalServerError;
             _apiResponse.Message = "Something went wrong";
             _apiResponse.Errors = new List<string> { ex.Message };
-            
+
             return StatusCode(500, _apiResponse);
         }
     }
-    
+
     /// <summary>
     /// Manual verification endpoint for admin use
     /// </summary>
@@ -327,9 +337,9 @@ public class DonationsController : ControllerBase
         try
         {
             _logger.LogInformation($"Manual verification requested for reference: {reference}");
-            
+
             var donation = await _db.Donations.FirstOrDefaultAsync(d => d.TransactionReference == reference);
-            
+
             if (donation == null)
             {
                 _logger.LogWarning($"Donation not found for reference: {reference}");
@@ -338,9 +348,10 @@ public class DonationsController : ControllerBase
                 _apiResponse.Message = "Donation not found";
                 return NotFound(_apiResponse);
             }
-            
-            _logger.LogInformation($"Found donation for reference: {reference}. Current status: {donation.PaymentStatus}");
-            
+
+            _logger.LogInformation(
+                $"Found donation for reference: {reference}. Current status: {donation.PaymentStatus}");
+
             // Already successful, no need to verify again
             if (donation.PaymentStatus == CommonConstants.TransactionStatus.Success)
             {
@@ -350,11 +361,11 @@ public class DonationsController : ControllerBase
                 _apiResponse.Message = "Payment already verified as successful";
                 return Ok(_apiResponse);
             }
-            
+
             // Verify the payment with PayStack directly
             _logger.LogInformation($"Verifying payment with PayStack for reference: {reference}");
             var verification = _payStackPaymentService.VerifyTransaction(reference);
-            
+
             if (verification == null)
             {
                 _logger.LogWarning($"PayStack verification returned null for reference: {reference}");
@@ -363,22 +374,23 @@ public class DonationsController : ControllerBase
                 _apiResponse.Message = "Payment verification failed - PayStack returned null";
                 return BadRequest(_apiResponse);
             }
-            
-            _logger.LogInformation($"PayStack verification response. Status: {verification.Status}, Data.Status: {verification.Data?.Status}");
-            
+
+            _logger.LogInformation(
+                $"PayStack verification response. Status: {verification.Status}, Data.Status: {verification.Data?.Status}");
+
             if (verification.Status && verification.Data.Status == "success")
             {
                 _logger.LogInformation($"PayStack verified payment as successful for reference: {reference}");
-                
+
                 // Begin transaction to ensure data consistency
                 using var transaction = await _db.Database.BeginTransactionAsync();
-                
+
                 try
                 {
                     // Update donation status
                     donation.PaymentStatus = CommonConstants.TransactionStatus.Success;
                     await _db.SaveChangesAsync();
-                    
+
                     // Tell the actor system about the completed donation
                     _logger.LogInformation($"Sending message to DonationActor for reference: {reference}");
                     TopLevelActor.DonationActor.Tell(new DonationCompletedMessage(
@@ -386,10 +398,10 @@ public class DonationsController : ControllerBase
                         donation.Amount,
                         donation.DonorPhone
                     ));
-                    
+
                     await transaction.CommitAsync();
                     _logger.LogInformation($"Transaction committed for reference: {reference}");
-                    
+
                     _apiResponse.IsSuccess = true;
                     _apiResponse.StatusCode = HttpStatusCode.OK;
                     _apiResponse.Message = "Payment verified successfully";
@@ -403,8 +415,9 @@ public class DonationsController : ControllerBase
                     throw;
                 }
             }
-            
-            _logger.LogWarning($"PayStack verification failed for reference: {reference}. Status: {verification.Status}, Data.Status: {verification.Data?.Status}");
+
+            _logger.LogWarning(
+                $"PayStack verification failed for reference: {reference}. Status: {verification.Status}, Data.Status: {verification.Data?.Status}");
             _apiResponse.IsSuccess = false;
             _apiResponse.StatusCode = HttpStatusCode.BadRequest;
             _apiResponse.Message = $"Payment verification failed. PayStack status: {verification.Data?.Status}";
@@ -416,11 +429,11 @@ public class DonationsController : ControllerBase
             _apiResponse.StatusCode = HttpStatusCode.InternalServerError;
             _apiResponse.Message = "Something went wrong";
             _apiResponse.Errors = new List<string> { ex.Message };
-            
+
             return StatusCode(500, _apiResponse);
         }
     }
-    
+
     /// <summary>
     /// Lists all donations with their status - for debugging
     /// </summary>
@@ -435,23 +448,26 @@ public class DonationsController : ControllerBase
                 .OrderByDescending(d => d.DonationDate)
                 .Take(50)
                 .ToListAsync();
-            
+
             _logger.LogInformation($"Found {donations.Count} donations");
-            
-            var results = donations.Select(d => new {
+
+            var results = donations.Select(d => new
+            {
                 Id = d.Id,
                 Reference = d.TransactionReference,
                 Amount = d.Amount,
                 Currency = d.Currency,
                 Status = d.PaymentStatus,
                 Date = d.DonationDate,
-                Phone = d.DonorPhone != null ? "****" + d.DonorPhone.Substring(Math.Max(0, d.DonorPhone.Length - 4)) : null
+                Phone = d.DonorPhone != null
+                    ? "****" + d.DonorPhone.Substring(Math.Max(0, d.DonorPhone.Length - 4))
+                    : null
             }).ToList();
-            
+
             _apiResponse.IsSuccess = true;
             _apiResponse.StatusCode = HttpStatusCode.OK;
             _apiResponse.Result = results;
-            
+
             return Ok(_apiResponse);
         }
         catch (Exception ex)
@@ -460,11 +476,11 @@ public class DonationsController : ControllerBase
             _apiResponse.StatusCode = HttpStatusCode.InternalServerError;
             _apiResponse.Message = "Something went wrong";
             _apiResponse.Errors = new List<string> { ex.Message };
-            
+
             return StatusCode(500, _apiResponse);
         }
     }
-    
+
     /// <summary>
     /// Manually set a donation status - for debugging
     /// </summary>
@@ -475,9 +491,9 @@ public class DonationsController : ControllerBase
         try
         {
             _logger.LogInformation($"Manually setting status for donation {reference} to {status}");
-            
+
             var donation = await _db.Donations.FirstOrDefaultAsync(d => d.TransactionReference == reference);
-            
+
             if (donation == null)
             {
                 _logger.LogWarning($"Donation not found for reference: {reference}");
@@ -486,12 +502,12 @@ public class DonationsController : ControllerBase
                 _apiResponse.Message = "Donation not found";
                 return NotFound(_apiResponse);
             }
-            
+
             donation.PaymentStatus = status;
             await _db.SaveChangesAsync();
-            
+
             _logger.LogInformation($"Status updated for donation {reference}");
-            
+
             // If setting to success, also notify actor system
             if (status.Equals(CommonConstants.TransactionStatus.Success, StringComparison.OrdinalIgnoreCase))
             {
@@ -502,7 +518,7 @@ public class DonationsController : ControllerBase
                     donation.DonorPhone
                 ));
             }
-            
+
             _apiResponse.IsSuccess = true;
             _apiResponse.StatusCode = HttpStatusCode.OK;
             _apiResponse.Message = "Status updated successfully";
@@ -514,11 +530,150 @@ public class DonationsController : ControllerBase
             _apiResponse.StatusCode = HttpStatusCode.InternalServerError;
             _apiResponse.Message = "Something went wrong";
             _apiResponse.Errors = new List<string> { ex.Message };
-            
+
             return StatusCode(500, _apiResponse);
         }
     }
-    
+
+    /// <summary>
+    /// Update donation statistics manually (admin only)
+    /// </summary>
+    [HttpPost("statistics/update")]
+    [Authorize(Roles = CommonConstants.Roles.Admin)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> UpdateStatistics([FromBody] UpdateStatisticsRequest request)
+    {
+        try
+        {
+            _logger.LogInformation("Manually updating donation statistics");
+
+            var stats = await _db.DonationStatistics.FindAsync(1);
+
+            if (stats == null)
+            {
+                _logger.LogInformation("No statistics record found, creating new one");
+                stats = new DonationStatistics
+                {
+                    Id = 1,
+                    TotalDonations = request.TotalDonations ?? 0,
+                    TotalDonors = request.TotalDonors ?? 0,
+                    MealsServed = request.MealsServed ?? 0,
+                    LastUpdated = DateTime.UtcNow
+                };
+                _db.DonationStatistics.Add(stats);
+            }
+            else
+            {
+                if (request.TotalDonations.HasValue)
+                    stats.TotalDonations = request.TotalDonations.Value;
+
+                if (request.TotalDonors.HasValue)
+                    stats.TotalDonors = request.TotalDonors.Value;
+
+                if (request.MealsServed.HasValue)
+                    stats.MealsServed = request.MealsServed.Value;
+
+                stats.LastUpdated = DateTime.UtcNow;
+                _db.DonationStatistics.Update(stats);
+            }
+
+            await _db.SaveChangesAsync();
+
+            _logger.LogInformation(
+                $"Successfully updated statistics. New values - Total: {stats.TotalDonations}, Donors: {stats.TotalDonors}, Meals: {stats.MealsServed}");
+
+            _apiResponse.IsSuccess = true;
+            _apiResponse.StatusCode = HttpStatusCode.OK;
+            _apiResponse.Message = "Statistics updated successfully";
+            _apiResponse.Result = stats;
+
+            return Ok(_apiResponse);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error updating donation statistics");
+            _apiResponse.StatusCode = HttpStatusCode.InternalServerError;
+            _apiResponse.Message = "Something went wrong";
+            _apiResponse.Errors = new List<string> { ex.Message };
+
+            return StatusCode(500, _apiResponse);
+        }
+    }
+
+    /// <summary>
+    /// Recalculate donation statistics from all successful donations (admin only)
+    /// </summary>
+    [HttpPost("statistics/recalculate")]
+    [Authorize(Roles = CommonConstants.Roles.Admin)]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> RecalculateStatistics()
+    {
+        try
+        {
+            _logger.LogInformation("Recalculating donation statistics from all successful donations");
+
+            // Get all successful donations
+            var successfulDonations = await _db.Donations
+                .Where(d => d.PaymentStatus == CommonConstants.TransactionStatus.Success)
+                .ToListAsync();
+
+            decimal totalDonations = successfulDonations.Sum(d => d.Amount);
+            int totalDonors = successfulDonations.Count;
+            int mealsServed = successfulDonations.Sum(d => CalculateMeals(d.Amount));
+
+            _logger.LogInformation(
+                $"Calculated from {totalDonors} donations: Total Amount: {totalDonations}, Meals: {mealsServed}");
+
+            // Update statistics record
+            var stats = await _db.DonationStatistics.FindAsync(1);
+
+            if (stats == null)
+            {
+                _logger.LogInformation("No statistics record found, creating new one");
+                stats = new DonationStatistics
+                {
+                    Id = 1,
+                    TotalDonations = totalDonations,
+                    TotalDonors = totalDonors,
+                    MealsServed = mealsServed,
+                    LastUpdated = DateTime.UtcNow
+                };
+                _db.DonationStatistics.Add(stats);
+            }
+            else
+            {
+                stats.TotalDonations = totalDonations;
+                stats.TotalDonors = totalDonors;
+                stats.MealsServed = mealsServed;
+                stats.LastUpdated = DateTime.UtcNow;
+                _db.DonationStatistics.Update(stats);
+            }
+
+            await _db.SaveChangesAsync();
+
+            _logger.LogInformation("Statistics recalculated successfully");
+
+            _apiResponse.IsSuccess = true;
+            _apiResponse.StatusCode = HttpStatusCode.OK;
+            _apiResponse.Message = "Statistics recalculated successfully";
+            _apiResponse.Result = stats;
+
+            return Ok(_apiResponse);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error recalculating donation statistics");
+            _apiResponse.StatusCode = HttpStatusCode.InternalServerError;
+            _apiResponse.Message = "Something went wrong";
+            _apiResponse.Errors = new List<string> { ex.Message };
+
+            return StatusCode(500, _apiResponse);
+        }
+    }
+
+
     /// <summary>
     /// Get donation statistics
     /// </summary>
@@ -530,7 +685,7 @@ public class DonationsController : ControllerBase
         {
             _logger.LogInformation("Fetching donation statistics");
             var stats = await _db.DonationStatistics.FindAsync(1);
-            
+
             if (stats == null)
             {
                 _logger.LogInformation("No statistics record found, creating default");
@@ -542,12 +697,13 @@ public class DonationsController : ControllerBase
                     LastUpdated = DateTime.UtcNow
                 };
             }
-            
-            _logger.LogInformation($"Statistics: Total Donations: {stats.TotalDonations}, Total Donors: {stats.TotalDonors}, Meals Served: {stats.MealsServed}");
+
+            _logger.LogInformation(
+                $"Statistics: Total Donations: {stats.TotalDonations}, Total Donors: {stats.TotalDonors}, Meals Served: {stats.MealsServed}");
             _apiResponse.IsSuccess = true;
             _apiResponse.StatusCode = HttpStatusCode.OK;
             _apiResponse.Result = stats;
-            
+
             return Ok(_apiResponse);
         }
         catch (Exception ex)
@@ -556,10 +712,28 @@ public class DonationsController : ControllerBase
             _apiResponse.StatusCode = HttpStatusCode.InternalServerError;
             _apiResponse.Message = "Something went wrong";
             _apiResponse.Errors = new List<string> { ex.Message };
-            
+
             return StatusCode(500, _apiResponse);
         }
     }
+    
+    
+    //Helper method to calculate meals from donation amount
+    private int CalculateMeals(decimal amount)
+    {
+        // Assuming 1 meal costs 50 GHS
+        return (int)(amount / 50);
+    }
+}
+
+
+
+// DTO for UpdateStatisticsRequest 
+public class UpdateStatisticsRequest
+{
+    public decimal? TotalDonations { get; set; }
+    public int? TotalDonors { get; set; }
+    public int? MealsServed { get; set; }
 }
 
 // DTO for PayStack webhook
@@ -574,3 +748,5 @@ public class PayStackWebhookDataDto
     public string Reference { get; set; }
     public string Status { get; set; }
 }
+
+//
