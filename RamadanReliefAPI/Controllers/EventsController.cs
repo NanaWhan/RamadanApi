@@ -20,6 +20,11 @@ public class EventsController : ControllerBase
     private readonly ILogger<EventsController> _logger;
     private ApiResponse _apiResponse;
 
+    /// <summary>
+    ///  Constructor
+    /// </summary>
+    /// <param name="db"></param>
+    /// <param name="logger"></param>
     public EventsController(
         ApplicationDbContext db,
         ILogger<EventsController> logger)
@@ -307,7 +312,10 @@ public class EventsController : ControllerBase
     }
 }
 
-// Event creation request DTO
+
+/// <summary>
+/// DtO for event registration request
+/// </summary>
 public class EventCreateRequest
 {
     [Required(ErrorMessage = "Title is required")]
