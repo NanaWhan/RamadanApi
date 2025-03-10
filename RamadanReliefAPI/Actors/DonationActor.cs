@@ -220,8 +220,8 @@ public class DonationActor : BaseActor
     private int CalculateMeals(decimal amount)
     {
         // Assuming 1 meal costs 5 GHS
-        _logger.LogInformation($"DonationActor: Calculating meals for amount {amount}. (Rate: 1 meal = 50 GHS)");
-        int meals = (int)(amount / 50);
+        _logger.LogInformation($"DonationActor: Calculating meals for amount {amount}. (Rate: 1 meal = 10 GHS)");
+        int meals = (int)(amount / 10);
         _logger.LogInformation($"DonationActor: Calculated {meals} meals for amount {amount}");
         return meals;
     }

@@ -721,8 +721,8 @@ public class DonationsController : ControllerBase
     //Helper method to calculate meals from donation amount
     private int CalculateMeals(decimal amount)
     {
-        // Assuming 1 meal costs 50 GHS
-        return (int)(amount / 50);
+        // Assuming 1 meal costs 10 GHS
+        return (int)(amount / 10);
     }
 }
 
