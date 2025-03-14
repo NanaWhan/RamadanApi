@@ -619,12 +619,25 @@ public class DonationsController : ControllerBase
                 .Where(d => d.PaymentStatus == CommonConstants.TransactionStatus.Success)
                 .ToListAsync();
 
+            // Calculate total donations amount
             decimal totalDonations = successfulDonations.Sum(d => d.Amount);
-            int totalDonors = successfulDonations.Count;
-            int mealsServed = successfulDonations.Sum(d => CalculateMeals(d.Amount));
 
+            // Calculate unique donors by counting distinct phone numbers
+            // Only count non-null phone numbers
+            int totalDonors = successfulDonations
+                .Where(d => !string.IsNullOrEmpty(d.DonorPhone))
+                .Select(d => d.DonorPhone)
+                .Distinct()
+                .Count();
+
+            // Add anonymous donors (those without phone numbers) as individual donors
+            totalDonors += successfulDonations.Count(d => string.IsNullOrEmpty(d.DonorPhone));
+
+            // Calculate meals served
+            int mealsServed = successfulDonations.Sum(d => (int)(d.Amount / 10));
+            
             _logger.LogInformation(
-                $"Calculated from {totalDonors} donations: Total Amount: {totalDonations}, Meals: {mealsServed}");
+                $"Calculated from {successfulDonations.Count} donations: Total Amount: {totalDonations}, Unique Donors: {totalDonors}, Meals: {mealsServed}");
 
             // Update statistics record
             var stats = await _db.DonationStatistics.FindAsync(1);
@@ -689,13 +702,44 @@ public class DonationsController : ControllerBase
             if (stats == null)
             {
                 _logger.LogInformation("No statistics record found, creating default");
+
+                // Instead of just returning empty stats, let's calculate them on the fly
+                // This ensures we always have accurate statistics even if no record exists
+
+                var successfulDonations = await _db.Donations
+                    .Where(d => d.PaymentStatus == CommonConstants.TransactionStatus.Success)
+                    .ToListAsync();
+
+                decimal totalDonations = successfulDonations.Sum(d => d.Amount);
+
+                // Calculate unique donors
+                int totalDonors = successfulDonations
+                    .Where(d => !string.IsNullOrEmpty(d.DonorPhone))
+                    .Select(d => d.DonorPhone)
+                    .Distinct()
+                    .Count();
+
+                // Add anonymous donors
+                totalDonors += successfulDonations.Count(d => string.IsNullOrEmpty(d.DonorPhone));
+
+                // Calculate meals
+                int mealsServed = successfulDonations.Sum(d => (int)(d.Amount / 10));
+                _logger.LogInformation($"Manually calculated meals: {successfulDonations.Sum(d => (int)(d.Amount / 10))}");
+
+                // Create and save the statistics record
                 stats = new DonationStatistics
                 {
-                    TotalDonations = 0,
-                    TotalDonors = 0,
-                    MealsServed = 0,
+                    Id = 1,
+                    TotalDonations = totalDonations,
+                    TotalDonors = totalDonors,
+                    MealsServed = mealsServed,
                     LastUpdated = DateTime.UtcNow
                 };
+
+                _db.DonationStatistics.Add(stats);
+                await _db.SaveChangesAsync();
+
+                _logger.LogInformation($"Created statistics record from {successfulDonations.Count} donations");
             }
 
             _logger.LogInformation(
