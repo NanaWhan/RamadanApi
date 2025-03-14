@@ -129,7 +129,7 @@ public class DonationActor : BaseActor
             }
 
             var messageText =
-                $"Thank you for your donation of {donation.Amount} {donation.Currency} to Ramadan Relief. Your generosity will help provide {CalculateMeals(donation.Amount)} meals for those in need during the holy month.";
+                $"Thank you {donation.DonorName}, for your donation of {donation.Amount} {donation.Currency} to Ramadan Relief. Your generosity will help provide {CalculateMeals(donation.Amount)} meals for those in need during the holy month.";
             _logger.LogInformation($"DonationActor: SMS message: {messageText}");
 
             var smsKey = "2nwkmCOVenT5pV0BZMFFiDnsn";
