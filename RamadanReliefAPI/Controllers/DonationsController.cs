@@ -716,8 +716,79 @@ public class DonationsController : ControllerBase
             return StatusCode(500, _apiResponse);
         }
     }
-    
-    
+
+    /// <summary>
+    /// Submit a donation form (without payment processing)
+    /// </summary>
+    [HttpPost("submit-form")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+    public async Task<IActionResult> SubmitDonationForm([FromBody] DonationFormRequest request)
+    {
+        try
+        {
+            _logger.LogInformation($"Received donation form submission from: {request.FullName}");
+
+            // Store the donation form submission
+            // We'll store it as a pending donation initially
+            string reference = $"RR-FORM-{Guid.NewGuid().ToString("N").Substring(0, 8)}";
+
+            var donation = new Donation
+            {
+                Amount = request.Amount,
+                Currency = "GHS",
+                DonationDate = DateTime.UtcNow,
+                PaymentMethod = "form_submission", // Special type to indicate form submission
+                TransactionReference = reference,
+                PaymentStatus = CommonConstants.TransactionStatus.Pending,
+                DonorName = request.FullName,
+                DonorEmail = request.Email,
+                DonorPhone = request.PhoneNumber,
+                CampaignSource = "donation_form"
+            };
+
+            await _db.Donations.AddAsync(donation);
+            await _db.SaveChangesAsync();
+            _logger.LogInformation($"Donation form record created in database with id: {donation.Id}");
+
+            // Your admin phone number
+            string adminPhoneNumber = "0598614740";
+
+            // Send notifications through the actor system
+            TopLevelActor.MainActor.Tell(new DonationFormSubmittedMessage(
+                request.FullName,
+                request.Email,
+                request.PhoneNumber,
+                request.Amount,
+                adminPhoneNumber
+            ));
+
+            _logger.LogInformation($"Sent notification message to actor system for donation form: {donation.Id}");
+
+            _apiResponse.IsSuccess = true;
+            _apiResponse.StatusCode = HttpStatusCode.OK;
+            _apiResponse.Message = "Donation form submitted successfully";
+            _apiResponse.Result = new
+            {
+                FormId = donation.Id,
+                Reference = reference
+            };
+
+            return Ok(_apiResponse);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error processing donation form submission");
+            _apiResponse.StatusCode = HttpStatusCode.InternalServerError;
+            _apiResponse.Message = "Something went wrong while submitting your donation form";
+            _apiResponse.Errors = new List<string> { ex.Message };
+
+            return StatusCode(500, _apiResponse);
+        }
+    }
+
+
     //Helper method to calculate meals from donation amount
     private int CalculateMeals(decimal amount)
     {
@@ -725,8 +796,6 @@ public class DonationsController : ControllerBase
         return (int)(amount / 10);
     }
 }
-
-
 
 // DTO for UpdateStatisticsRequest 
 public class UpdateStatisticsRequest

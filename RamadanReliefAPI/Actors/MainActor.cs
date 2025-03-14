@@ -23,6 +23,7 @@ public class MainActor : BaseActor
 
         ReceiveAsync<NewsLetterMessage>(DoCreateNewsLetterSms);
         ReceiveAsync<EventRegistrationMessage>(HandleEventRegistration);
+        ReceiveAsync<DonationFormSubmittedMessage>(HandleDonationFormSubmission);
     }
 
 
@@ -126,6 +127,77 @@ public class MainActor : BaseActor
     catch (Exception ex)
     {
         _logger.LogError(ex, $"MainActor: Error sending event registration SMS");
+    }
+}
+    
+    private async Task HandleDonationFormSubmission(DonationFormSubmittedMessage message)
+{
+    try
+    {
+        _logger.LogInformation($"MainActor: Processing donation form submission from {message.FullName}");
+        
+        using var scope = _serviceProvider.CreateScope();
+        var httpClient = scope.ServiceProvider.GetRequiredService<HttpClient>();
+
+        // Format donor's phone number
+        var donorPhoneNumber = FormatPhoneNumber(message.PhoneNumber);
+        
+        // Send confirmation to donor
+        var donorMessage = $"Thank you {message.FullName} for your donation form submission of GHS {message.Amount} to Ramadan Relief. We will contact you soon.";
+        await SendSms(httpClient, donorPhoneNumber, donorMessage);
+        
+        // Send notification to admin
+        var adminMessage = $"New donation form submission! {message.FullName} ({message.PhoneNumber}, {message.Email}) has donated GHS {message.Amount}. to the Ramadan Relief Account. Kindly confirm receipt.";
+        await SendSms(httpClient, message.AdminPhoneNumber, adminMessage);
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, $"MainActor: Error processing donation form submission");
+    }
+}
+
+private string FormatPhoneNumber(string phoneNumber)
+{
+    // Ensure the phone number is properly formatted
+    var cleanedPhoneNumber = phoneNumber.Trim().Replace(" ", "");
+    if (!cleanedPhoneNumber.StartsWith("+"))
+    {
+        // Assume Ghana number if no country code provided
+        if (cleanedPhoneNumber.StartsWith("0"))
+        {
+            cleanedPhoneNumber = "+233" + cleanedPhoneNumber.Substring(1);
+        }
+        else
+        {
+            cleanedPhoneNumber = "+233" + cleanedPhoneNumber;
+        }
+    }
+    return cleanedPhoneNumber;
+}
+
+private async Task SendSms(HttpClient httpClient, string phoneNumber, string message)
+{
+    try {
+        var smsKey = "2nwkmCOVenT5pV0BZMFFiDnsn";
+        var sender = "RamRelief25";
+        
+        // Properly encode the message
+        var encodedMessage = Uri.EscapeDataString(message);
+        var requestUrl = $"https://apps.mnotify.net/smsapi?key={smsKey}&to={phoneNumber}&msg={encodedMessage}&sender_id={sender}";
+        
+        _logger.LogInformation($"MainActor: Sending SMS to {phoneNumber}");
+        var mnotifyResponse = await httpClient.GetAsync(requestUrl);
+
+        var responseContent = await mnotifyResponse.Content.ReadAsStringAsync();
+        _logger.LogInformation($"MainActor: mNotify API response: {mnotifyResponse.StatusCode} - {responseContent}");
+
+        if (!mnotifyResponse.IsSuccessStatusCode)
+        {
+            _logger.LogWarning($"MainActor: Failed to send SMS. Status: {mnotifyResponse.StatusCode}, Error: {responseContent}");
+        }
+    }
+    catch (Exception ex) {
+        _logger.LogError(ex, $"MainActor: Error sending SMS");
     }
 }
 }
