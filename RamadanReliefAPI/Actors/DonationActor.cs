@@ -13,6 +13,8 @@ public class DonationActor : BaseActor
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<DonationActor> _logger;
     private readonly ApplicationDbContext _db;
+    // Add a HashSet to track donations that have already been processed
+    private readonly HashSet<string> _processedDonations = new HashSet<string>();
 
     public DonationActor(
         IServiceProvider serviceProvider,
@@ -32,6 +34,14 @@ public class DonationActor : BaseActor
     {
         _logger.LogInformation(
             $"DonationActor received message for transaction reference: {message.TransactionReference}");
+
+        // Check if this donation has already been processed
+        if (_processedDonations.Contains(message.TransactionReference))
+        {
+            _logger.LogInformation(
+                $"DonationActor: Donation {message.TransactionReference} has already been processed. Skipping to avoid duplicate messages.");
+            return;
+        }
 
         try
         {
@@ -86,6 +96,9 @@ public class DonationActor : BaseActor
             // Wait for both tasks to complete
             await Task.WhenAll(sendSmsTask, updateStatsTask);
 
+            // Add to processed donations set after successful processing
+            _processedDonations.Add(message.TransactionReference);
+
             _logger.LogInformation($"DonationActor: Successfully processed donation: {message.TransactionReference}");
         }
         catch (Exception ex)
@@ -127,6 +140,9 @@ public class DonationActor : BaseActor
                     cleanedPhoneNumber = "+233" + cleanedPhoneNumber;
                 }
             }
+
+            // Calculate meals
+            int meals = CalculateMeals(donation.Amount);
 
             var messageText =
                 $"Thank you {donation.DonorName}, for your donation of {donation.Amount} {donation.Currency} to Ramadan Relief. Your generosity will help provide meals for those in need during the holy month.";
