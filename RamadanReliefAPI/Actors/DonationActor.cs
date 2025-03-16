@@ -15,6 +15,9 @@ public class DonationActor : BaseActor
     private readonly ApplicationDbContext _db;
     // Add a HashSet to track donations that have already been processed
     private readonly HashSet<string> _processedDonations = new HashSet<string>();
+    
+    // Add admin notification phone number
+    private readonly string _adminNotificationPhone = "0249058729";
 
     public DonationActor(
         IServiceProvider serviceProvider,
@@ -92,9 +95,10 @@ public class DonationActor : BaseActor
             // Execute these tasks
             var sendSmsTask = SendThankYouSms(donation);
             var updateStatsTask = UpdateDonationStatistics(donation.Amount);
+            var notifyAdminTask = SendAdminNotification(donation);
 
-            // Wait for both tasks to complete
-            await Task.WhenAll(sendSmsTask, updateStatsTask);
+            // Wait for all tasks to complete
+            await Task.WhenAll(sendSmsTask, updateStatsTask, notifyAdminTask);
 
             // Add to processed donations set after successful processing
             _processedDonations.Add(message.TransactionReference);
@@ -178,6 +182,72 @@ public class DonationActor : BaseActor
         {
             _logger.LogError(ex,
                 $"DonationActor: Error sending thank you SMS for donation: {donation.TransactionReference}");
+            // We don't rethrow here as SMS failure shouldn't stop the entire process
+        }
+    }
+    
+    private async Task SendAdminNotification(Donation donation)
+    {
+        _logger.LogInformation($"DonationActor: Preparing to send admin notification SMS for {donation.TransactionReference}");
+
+        try
+        {
+            _logger.LogInformation($"DonationActor: Creating service scope for admin SMS sending");
+            using var scope = _serviceProvider.CreateScope();
+            var httpClient = scope.ServiceProvider.GetRequiredService<HttpClient>();
+
+            // Format admin phone number
+            var cleanedPhoneNumber = _adminNotificationPhone.Trim().Replace(" ", "");
+            if (!cleanedPhoneNumber.StartsWith("+"))
+            {
+                // Assume Ghana number if no country code provided
+                if (cleanedPhoneNumber.StartsWith("0"))
+                {
+                    cleanedPhoneNumber = "+233" + cleanedPhoneNumber.Substring(1);
+                }
+                else
+                {
+                    cleanedPhoneNumber = "+233" + cleanedPhoneNumber;
+                }
+            }
+
+            // Prepare donor name (use "Anonymous" if not provided)
+            var donorName = !string.IsNullOrEmpty(donation.DonorName) ? donation.DonorName : "Anonymous";
+
+            // Create the admin notification message
+            var messageText = $"New donation alert! {donorName} has donated {donation.Amount} {donation.Currency} to Ramadan Relief. Transaction reference: {donation.TransactionReference}.";
+            _logger.LogInformation($"DonationActor: Admin SMS message: {messageText}");
+
+            var smsKey = "2nwkmCOVenT5pV0BZMFFiDnsn";
+            var sender = "RamRelief25";
+
+            // Properly encode the message for URL transmission
+            var encodedMessage = Uri.EscapeDataString(messageText);
+            var requestUrl =
+                $"https://apps.mnotify.net/smsapi?key={smsKey}&to={cleanedPhoneNumber}&msg={encodedMessage}&sender_id={sender}";
+
+            _logger.LogInformation($"DonationActor: Sending admin SMS request to mNotify API: {requestUrl}");
+            var mnotifyResponse = await httpClient.GetAsync(requestUrl);
+
+            var responseContent = await mnotifyResponse.Content.ReadAsStringAsync();
+            _logger.LogInformation(
+                $"DonationActor: Admin SMS mNotify API response: {mnotifyResponse.StatusCode} - {responseContent}");
+
+            if (mnotifyResponse.IsSuccessStatusCode)
+            {
+                _logger.LogInformation(
+                    $"DonationActor: Admin SMS notification sent successfully for {donation.TransactionReference}. Result: {responseContent}");
+            }
+            else
+            {
+                _logger.LogWarning(
+                    $"DonationActor: Failed to send admin SMS for {donation.TransactionReference}. Status: {mnotifyResponse.StatusCode}, Error: {responseContent}");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex,
+                $"DonationActor: Error sending admin notification SMS for donation: {donation.TransactionReference}");
             // We don't rethrow here as SMS failure shouldn't stop the entire process
         }
     }
